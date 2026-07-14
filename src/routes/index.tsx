@@ -469,6 +469,7 @@ function LandingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaMarkup) }} />
 
       <div className="bg-background text-foreground">
+        <PromoTopBar onOpenModal={openConsultiveModal} />
         <main>
           <HeroSection onOpenModal={openConsultiveModal} />
           <Divider />
@@ -490,6 +491,8 @@ function LandingPage() {
           <GoogleReviewsSection onOpenModal={openConsultiveModal} />
           <Divider />
           <FaqSection onOpenModal={openConsultiveModal} />
+          <Divider />
+          <PromoBannerPais onOpenModal={openConsultiveModal} />
           <Divider />
           <FinalCtaSection onOpenModal={openConsultiveModal} />
         </main>
