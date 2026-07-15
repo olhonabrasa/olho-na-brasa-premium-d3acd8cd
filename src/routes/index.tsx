@@ -2043,20 +2043,14 @@ const projectTypeLabels: Record<NonNullable<ProjectType>, string> = {
 };
 
 function buildWhatsappMessage({
-  intro,
-  form,
-  projectType,
+  intro: _intro,
+  form: _form,
+  projectType: _projectType,
 }: {
   intro: string;
   form: ContactForm;
   projectType?: ProjectType;
 }) {
-  const lines = [intro, ""];
-  if (form.name) lines.push(`Nome: ${form.name}`);
-  const cityStr = form.state ? `${form.city}/${form.state.toUpperCase()}` : form.city;
-  if (cityStr) lines.push(`Cidade: ${cityStr}`);
-  if (projectType) lines.push(`Tipo de projeto: ${projectTypeLabels[projectType]}`);
-  if (form.photoUrl) lines.push("", `Foto da churrasqueira: ${form.photoUrl}`);
-  lines.push("", "Vim pela landing page.");
-  return buildWhatsappHref(lines.join("\n"));
+  return buildWhatsappHref("Olá! Quero montar meu Kit Premium. Vim pela landing page.");
 }
+
