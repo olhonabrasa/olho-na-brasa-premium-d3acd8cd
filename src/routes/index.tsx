@@ -1830,23 +1830,6 @@ function ConsultiveModal({
                 </div>
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleFinalAction(SITE_URL)}
-                className="block w-full rounded-2xl border border-border bg-background/50 p-4 text-left transition-colors hover:bg-card-hover"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card-hover text-primary">
-                    <ShoppingCart className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold text-foreground">Comprar direto no site</p>
-                    <p className="mt-1 text-sm leading-6 text-secondary-foreground">
-                      Veja os kits, escolha o tamanho e finalize sua compra
-                    </p>
-                  </div>
-                </div>
-              </button>
             </div>
           ) : null}
         </div>
