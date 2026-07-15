@@ -151,8 +151,9 @@ export function WhatsappChatSimulado({
     );
     const fotoLine = fotoUrl ? `%0A%0AFoto da churrasqueira: ${encodeURIComponent(fotoUrl)}` : "";
     const url = `https://wa.me/554740420956?text=${encodeURIComponent(
-      `Olá! Quero montar meu Kit Premium.\n\nNome: ${nome}\nCidade: ${cidade}/${estado.toUpperCase()}\n\nVim pela landing page.`,
-    )}${fotoLine}`;
+      `Olá! Quero montar meu Kit Premium. Vim pela landing page.`,
+    )}`;
+
     setStep("done");
     window.open(url, "_blank");
     setSending(false);
