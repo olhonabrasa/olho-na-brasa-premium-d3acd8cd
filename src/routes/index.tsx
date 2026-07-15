@@ -326,9 +326,9 @@ const faqItems = [
       "Sim! Para clientes da Grande Florianópolis e litoral catarinense, oferecemos serviço de instalação com equipe própria.",
   },
   {
-    question: "O Kit Premium inclui o quê?",
+    question: "O que inclui o Kit Premium?",
     answer:
-      "Grelha Uruguaia Premium (quadro 6mm, varões 5mm), Grelha de Descanso, Suporte Suspenso e Espetos. Tudo em Inox 304 alimentício, sob medida.",
+      "Grelha Uruguaia Premium, Grelha de Descanso, Suporte Suspenso e Espetos. Tudo em Inox 304 alimentício, sob medida.",
   },
 ];
 
@@ -1467,7 +1467,10 @@ function PromoBannerPais({ onOpenModal }: { onOpenModal: () => void }) {
     <section className="promo-pais section-dark relative overflow-hidden">
       <div
         className="pointer-events-none absolute inset-0 opacity-70"
-        style={{ background: "radial-gradient(60% 120% at 85% 50%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(60% 120% at 85% 50%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 70%)",
+        }}
         aria-hidden="true"
       />
       <div className="relative mx-auto flex max-w-(--container-max) flex-col items-center gap-6 px-5 py-12 text-center lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:py-16 lg:text-left">
@@ -1720,7 +1723,7 @@ function ConsultiveModal({
                   Para agilizar seu atendimento, consegue enviar uma foto da sua churrasqueira?
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-secondary-foreground">
-                  A foto é opcional, mas ajuda muito o especialista a entender seu projeto.
+                  A foto ajuda muito o especialista a entender seu projeto.
                 </p>
               </div>
               <PhotoUpload onPhotoUploaded={(url) => onChangeField("photoUrl", url)} />
@@ -1759,7 +1762,7 @@ function ConsultiveModal({
                     className="field-base"
                   />
                 </LabelField>
-                <LabelField label="E-mail (opcional)">
+                <LabelField label="E-mail">
                   <input
                     type="email"
                     value={form.email}
@@ -1843,14 +1846,6 @@ function ConsultiveModal({
                     </p>
                   </div>
                 </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleFinalAction(measurementHelpMessage)}
-                className="inline-flex items-center gap-2 pt-1 text-sm font-semibold text-primary hover:text-primary-strong"
-              >
-                Ainda preciso de ajuda com as medidas <ExternalLink className="h-4 w-4" />
               </button>
             </div>
           ) : null}

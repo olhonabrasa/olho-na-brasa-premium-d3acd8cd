@@ -51,9 +51,7 @@ export function PhotoUpload({ onPhotoUploaded }: PhotoUploadProps) {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("churrasqueira-fotos")
-        .getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from("churrasqueira-fotos").getPublicUrl(fileName);
 
       setUploaded(true);
       setUploading(false);
@@ -78,9 +76,7 @@ export function PhotoUpload({ onPhotoUploaded }: PhotoUploadProps) {
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">
-        Foto da churrasqueira (opcional)
-      </label>
+      <label className="text-sm font-medium text-foreground">Foto da churrasqueira</label>
 
       {!preview ? (
         <button
@@ -89,12 +85,8 @@ export function PhotoUpload({ onPhotoUploaded }: PhotoUploadProps) {
           className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-background/50 px-4 py-8 text-center transition-colors hover:border-primary hover:bg-card-hover"
         >
           <Camera className="h-8 w-8 text-primary" />
-          <span className="text-sm font-medium text-foreground">
-            Toque para tirar foto ou escolher da galeria
-          </span>
-          <span className="text-xs text-secondary-foreground">
-            Ajuda o vendedor a entender seu projeto
-          </span>
+          <span className="text-sm font-medium text-foreground">Toque para tirar foto ou escolher da galeria</span>
+          <span className="text-xs text-secondary-foreground">Ajuda o vendedor a entender seu projeto</span>
         </button>
       ) : (
         <div className="relative overflow-hidden rounded-2xl border border-border bg-black">
@@ -121,13 +113,7 @@ export function PhotoUpload({ onPhotoUploaded }: PhotoUploadProps) {
         </div>
       )}
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
