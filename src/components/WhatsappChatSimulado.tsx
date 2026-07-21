@@ -136,6 +136,20 @@ export function WhatsappChatSimulado({
       setFotoUrl(urlData.publicUrl);
       pushUserImage(urlData.publicUrl);
       setStep("ready");
+      void upsertLead(
+        {
+          nome,
+          whatsapp,
+          cidade,
+          estado: estado.toUpperCase(),
+          tipoProjeto: "Não informado (via chat WhatsApp)",
+          fotoUrl: urlData.publicUrl,
+        },
+        "chat_whatsapp",
+        leadId,
+      ).then((id) => {
+        if (id && !leadId) setLeadId(id);
+      });
       await pushBot("Recebi sua foto! 📸 Show!", 900);
       await pushBot(
         "Vou te transferir agora para um dos nossos especialistas finalizar seu orçamento. Só clicar abaixo 👇",
@@ -152,24 +166,23 @@ export function WhatsappChatSimulado({
   const finalize = async () => {
     if (sending) return;
     setSending(true);
-    const { leadId } = await sendLeadToDataCrazy(
-      {
-        nome,
-        whatsapp,
-        cidade,
-        estado: estado.toUpperCase(),
-        estagio: "",
-        tipoProjeto: "Não informado (via chat WhatsApp)",
-        fotoUrl,
-      },
-      "chat_whatsapp",
-    );
+    const leadData = {
+      nome,
+      whatsapp,
+      cidade,
+      estado: estado.toUpperCase(),
+      estagio: "",
+      tipoProjeto: "Não informado (via chat WhatsApp)",
+      fotoUrl,
+    };
+    const savedId = await upsertLead(leadData, "chat_whatsapp", leadId, { clickedWhatsapp: true });
+    if (savedId && !leadId) setLeadId(savedId);
+    void sendLeadToDataCrazy(leadData, "chat_whatsapp").catch(() => undefined);
     const url = `https://wa.me/554740420956?text=${encodeURIComponent(
       `Olá! Quero montar meu Kit Premium. Vim pela landing page.`,
     )}`;
 
     setStep("done");
-    await markWhatsappClick(leadId);
     window.open(url, "_blank");
     setSending(false);
   };
