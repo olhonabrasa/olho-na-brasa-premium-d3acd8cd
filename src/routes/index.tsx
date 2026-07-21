@@ -371,6 +371,7 @@ function LandingPage() {
   const [modalStage, setModalStage] = useState<ModalStage>("stage");
   const [projectType, setProjectType] = useState<ProjectType>(null);
   const [projectMomentLabel, setProjectMomentLabel] = useState("");
+  const [leadId, setLeadId] = useState<string | null>(null);
   const [headerVisible, setHeaderVisible] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<{
     src: string;
@@ -385,6 +386,24 @@ function LandingPage() {
     state: "",
     email: "",
     photoUrl: "",
+  });
+
+  const buildLeadData = (overrides?: Partial<{ estagio: string; tipoProjeto: ProjectType }>) => ({
+    nome: contactForm.name,
+    whatsapp: contactForm.whatsapp,
+    email: contactForm.email,
+    cidade: contactForm.city,
+    estado: contactForm.state.toUpperCase(),
+    estagio: overrides?.estagio ?? projectMomentLabel,
+    tipoProjeto:
+      overrides?.tipoProjeto !== undefined
+        ? overrides.tipoProjeto
+          ? projectTypeLabels[overrides.tipoProjeto]
+          : ""
+        : projectType
+          ? projectTypeLabels[projectType]
+          : "",
+    fotoUrl: contactForm.photoUrl,
   });
 
   const schemaMarkup = useMemo(
