@@ -27,7 +27,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { WhatsappChatSimulado } from "@/components/WhatsappChatSimulado";
-import { sendLeadToDataCrazy, markWhatsappClick } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, markWhatsappClick, upsertLead } from "@/lib/sendLead";
 import { cn } from "@/lib/utils";
 import beforeProjectAsset from "@/assets/olho-na-brasa-antes-1.jpg.asset.json";
 import afterProjectAsset from "@/assets/olho-na-brasa-depois-1.jpg.asset.json";
@@ -371,6 +371,7 @@ function LandingPage() {
   const [modalStage, setModalStage] = useState<ModalStage>("stage");
   const [projectType, setProjectType] = useState<ProjectType>(null);
   const [projectMomentLabel, setProjectMomentLabel] = useState("");
+  const [leadId, setLeadId] = useState<string | null>(null);
   const [headerVisible, setHeaderVisible] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<{
     src: string;
@@ -385,6 +386,24 @@ function LandingPage() {
     state: "",
     email: "",
     photoUrl: "",
+  });
+
+  const buildLeadData = (overrides?: Partial<{ estagio: string; tipoProjeto: ProjectType }>) => ({
+    nome: contactForm.name,
+    whatsapp: contactForm.whatsapp,
+    email: contactForm.email,
+    cidade: contactForm.city,
+    estado: contactForm.state.toUpperCase(),
+    estagio: overrides?.estagio ?? projectMomentLabel,
+    tipoProjeto:
+      overrides?.tipoProjeto !== undefined
+        ? overrides.tipoProjeto
+          ? projectTypeLabels[overrides.tipoProjeto]
+          : ""
+        : projectType
+          ? projectTypeLabels[projectType]
+          : "",
+    fotoUrl: contactForm.photoUrl,
   });
 
   const schemaMarkup = useMemo(
@@ -434,6 +453,7 @@ function LandingPage() {
     setModalStage("stage");
     setProjectType(null);
     setProjectMomentLabel("");
+    setLeadId(null);
   };
 
   const closeConsultiveModal = () => {
@@ -441,6 +461,7 @@ function LandingPage() {
     setModalStage("stage");
     setProjectType(null);
     setProjectMomentLabel("");
+    setLeadId(null);
   };
 
   const openChatSimulado = () => {
@@ -517,13 +538,33 @@ function LandingPage() {
         onProjectTypeSelect={(type) => {
           setProjectType(type);
           setModalStage("photo");
+          void upsertLead(buildLeadData({ tipoProjeto: type }), "formulario", null).then((id) => {
+            if (id) setLeadId(id);
+          });
         }}
-        onContinuePhoto={() => setModalStage("contact")}
-        onContinueContact={() => setModalStage("path")}
+        onContinuePhoto={() => {
+          setModalStage("contact");
+          void upsertLead(buildLeadData(), "formulario", leadId).then((id) => {
+            if (id && !leadId) setLeadId(id);
+          });
+        }}
+        onContinueContact={() => {
+          setModalStage("path");
+          void upsertLead(buildLeadData(), "formulario", leadId).then((id) => {
+            if (id && !leadId) setLeadId(id);
+          });
+        }}
+        onFinalAction={async (url) => {
+          const id = await upsertLead(buildLeadData(), "formulario", leadId, { clickedWhatsapp: true });
+          if (id && !leadId) setLeadId(id);
+          void sendLeadToDataCrazy(buildLeadData(), "formulario").catch(() => undefined);
+          window.open(url, "_blank");
+        }}
         onChangeField={(field, value) => setContactForm((current) => ({ ...current, [field]: value }))}
         specialistMessage={specialistMessage}
         measurementHelpMessage={measurementHelpMessage}
       />
+
 
       <WhatsappChatSimulado open={chatOpen} onClose={() => setChatOpen(false)} onSwitchToForm={openConsultiveModal} />
 
@@ -1608,6 +1649,7 @@ function ConsultiveModal({
   onContinuePhoto,
   onContinueContact,
   onChangeField,
+  onFinalAction,
   specialistMessage,
   measurementHelpMessage,
 }: {
@@ -1624,30 +1666,20 @@ function ConsultiveModal({
   onContinuePhoto: () => void;
   onContinueContact: () => void;
   onChangeField: (field: keyof ContactForm, value: string) => void;
+  onFinalAction: (url: string) => void | Promise<void>;
   specialistMessage: string;
   measurementHelpMessage: string;
 }) {
   if (!open) return null;
 
   void cityState;
+  void estagio;
+  void projectType;
+  void measurementHelpMessage;
   const canContinueContact = Boolean(form.name.trim() && form.whatsapp.trim() && form.city.trim() && form.state.trim());
 
-  const handleFinalAction = async (url: string) => {
-    const { leadId } = await sendLeadToDataCrazy(
-      {
-        nome: form.name,
-        whatsapp: form.whatsapp,
-        email: form.email,
-        cidade: form.city,
-        estado: form.state.toUpperCase(),
-        estagio: estagio || "",
-        tipoProjeto: projectType ? projectTypeLabels[projectType] : "",
-        fotoUrl: form.photoUrl,
-      },
-      "formulario",
-    );
-    await markWhatsappClick(leadId);
-    window.open(url, "_blank");
+  const handleFinalAction = (url: string) => {
+    void onFinalAction(url);
   };
 
   return (

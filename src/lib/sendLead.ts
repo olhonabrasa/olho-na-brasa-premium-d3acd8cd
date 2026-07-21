@@ -68,35 +68,7 @@ export async function sendLeadToDataCrazy(
     console.error("DataCrazy webhook error:", err);
   }
 
-  let leadId: string | null = null;
-  try {
-    const { data, error } = await supabase
-      .from("leads")
-      .insert({
-        nome: lead.nome || "",
-        whatsapp: lead.whatsapp || "",
-        email: lead.email || "",
-        cidade: lead.cidade || "",
-        estado: lead.estado || "",
-        estagio: lead.estagio || "",
-        tipo_projeto: lead.tipoProjeto || "",
-        foto_url: lead.fotoUrl || "",
-        origem_captura: origem,
-        clicked_whatsapp: false,
-        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-        page_url: typeof window !== "undefined" ? window.location.href : "",
-        ...utm,
-      })
-      .select("id")
-      .single();
-    if (error) {
-      console.error("Supabase insert lead error:", error);
-    } else {
-      leadId = (data as { id: string } | null)?.id ?? null;
-    }
-  } catch (err) {
-    console.error("Supabase insert lead exception:", err);
-  }
+  const leadId: string | null = null;
 
   if (!leadFired && typeof window !== "undefined" && typeof fbq !== "undefined") {
     leadFired = true;
@@ -132,5 +104,75 @@ export async function markWhatsappClick(leadId: string | null) {
     if (error) console.error("markWhatsappClick error:", error);
   } catch (err) {
     console.error("markWhatsappClick exception:", err);
+  }
+}
+
+function getUtmParams() {
+  if (typeof window === "undefined") {
+    return { utm_source: "", utm_medium: "", utm_campaign: "", utm_content: "" };
+  }
+  const params = new URLSearchParams(window.location.search);
+  return {
+    utm_source: params.get("utm_source") || "",
+    utm_medium: params.get("utm_medium") || "",
+    utm_campaign: params.get("utm_campaign") || "",
+    utm_content: params.get("utm_content") || "",
+  };
+}
+
+/**
+ * Insere um lead parcial (fire-and-forget) ou atualiza um lead existente.
+ * Nunca lança — retorna o ID quando conseguir persistir.
+ */
+export async function upsertLead(
+  lead: LeadData,
+  origem: LeadOrigem,
+  existingId: string | null,
+  opts?: { clickedWhatsapp?: boolean },
+): Promise<string | null> {
+  const clicked = opts?.clickedWhatsapp === true;
+  const patch: Record<string, unknown> = {
+    nome: lead.nome || "",
+    whatsapp: lead.whatsapp || "",
+    email: lead.email || "",
+    cidade: lead.cidade || "",
+    estado: lead.estado || "",
+    estagio: lead.estagio || "",
+    tipo_projeto: lead.tipoProjeto || "",
+    foto_url: lead.fotoUrl || "",
+    origem_captura: origem,
+  };
+  if (clicked) {
+    patch.clicked_whatsapp = true;
+    patch.clicked_whatsapp_at = new Date().toISOString();
+  }
+
+  try {
+    if (existingId) {
+      const { error } = await supabase.from("leads").update(patch).eq("id", existingId);
+      if (error) console.error("upsertLead update error:", error);
+      return existingId;
+    }
+    const insertPayload = {
+      ...patch,
+      clicked_whatsapp: clicked,
+      clicked_whatsapp_at: clicked ? new Date().toISOString() : null,
+      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+      page_url: typeof window !== "undefined" ? window.location.href : "",
+      ...getUtmParams(),
+    };
+    const { data, error } = await supabase
+      .from("leads")
+      .insert(insertPayload)
+      .select("id")
+      .single();
+    if (error) {
+      console.error("upsertLead insert error:", error);
+      return null;
+    }
+    return (data as { id: string } | null)?.id ?? null;
+  } catch (err) {
+    console.error("upsertLead exception:", err);
+    return null;
   }
 }

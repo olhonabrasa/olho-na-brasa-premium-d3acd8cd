@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Paperclip, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { sendLeadToDataCrazy, markWhatsappClick } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, upsertLead } from "@/lib/sendLead";
 import atendenteAsset from "@/assets/atendente.png.asset.json";
 
 type Msg =
@@ -40,6 +40,7 @@ export function WhatsappChatSimulado({
   const [uploading, setUploading] = useState(false);
   const [fotoUrl, setFotoUrl] = useState("");
   const [sending, setSending] = useState(false);
+  const [leadId, setLeadId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bootedRef = useRef(false);
@@ -65,6 +66,7 @@ export function WhatsappChatSimulado({
       setFotoUrl("");
       setUploading(false);
       setSending(false);
+      setLeadId(null);
     }
   }, [open]);
 
@@ -95,6 +97,19 @@ export function WhatsappChatSimulado({
     if (!nome.trim() || !whatsapp.trim() || !cidade.trim() || !estado.trim()) return;
     pushUser(`${nome}, ${cidade}/${estado.toUpperCase()}`);
     setStep("photo");
+    void upsertLead(
+      {
+        nome,
+        whatsapp,
+        cidade,
+        estado: estado.toUpperCase(),
+        tipoProjeto: "Não informado (via chat WhatsApp)",
+      },
+      "chat_whatsapp",
+      null,
+    ).then((id) => {
+      if (id) setLeadId(id);
+    });
     const first = nome.trim().split(" ")[0];
     await pushBot(`Perfeito, ${first}! 👍`, 900);
     await pushBot("Agora preciso que você envie uma foto da sua churrasqueira ou do projeto.", 1200);
@@ -121,6 +136,20 @@ export function WhatsappChatSimulado({
       setFotoUrl(urlData.publicUrl);
       pushUserImage(urlData.publicUrl);
       setStep("ready");
+      void upsertLead(
+        {
+          nome,
+          whatsapp,
+          cidade,
+          estado: estado.toUpperCase(),
+          tipoProjeto: "Não informado (via chat WhatsApp)",
+          fotoUrl: urlData.publicUrl,
+        },
+        "chat_whatsapp",
+        leadId,
+      ).then((id) => {
+        if (id && !leadId) setLeadId(id);
+      });
       await pushBot("Recebi sua foto! 📸 Show!", 900);
       await pushBot(
         "Vou te transferir agora para um dos nossos especialistas finalizar seu orçamento. Só clicar abaixo 👇",
@@ -137,24 +166,23 @@ export function WhatsappChatSimulado({
   const finalize = async () => {
     if (sending) return;
     setSending(true);
-    const { leadId } = await sendLeadToDataCrazy(
-      {
-        nome,
-        whatsapp,
-        cidade,
-        estado: estado.toUpperCase(),
-        estagio: "",
-        tipoProjeto: "Não informado (via chat WhatsApp)",
-        fotoUrl,
-      },
-      "chat_whatsapp",
-    );
+    const leadData = {
+      nome,
+      whatsapp,
+      cidade,
+      estado: estado.toUpperCase(),
+      estagio: "",
+      tipoProjeto: "Não informado (via chat WhatsApp)",
+      fotoUrl,
+    };
+    const savedId = await upsertLead(leadData, "chat_whatsapp", leadId, { clickedWhatsapp: true });
+    if (savedId && !leadId) setLeadId(savedId);
+    void sendLeadToDataCrazy(leadData, "chat_whatsapp").catch(() => undefined);
     const url = `https://wa.me/554740420956?text=${encodeURIComponent(
       `Olá! Quero montar meu Kit Premium. Vim pela landing page.`,
     )}`;
 
     setStep("done");
-    await markWhatsappClick(leadId);
     window.open(url, "_blank");
     setSending(false);
   };
