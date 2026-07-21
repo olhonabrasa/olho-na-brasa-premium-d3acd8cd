@@ -538,13 +538,33 @@ function LandingPage() {
         onProjectTypeSelect={(type) => {
           setProjectType(type);
           setModalStage("photo");
+          void upsertLead(buildLeadData({ tipoProjeto: type }), "formulario", null).then((id) => {
+            if (id) setLeadId(id);
+          });
         }}
-        onContinuePhoto={() => setModalStage("contact")}
-        onContinueContact={() => setModalStage("path")}
+        onContinuePhoto={() => {
+          setModalStage("contact");
+          void upsertLead(buildLeadData(), "formulario", leadId).then((id) => {
+            if (id && !leadId) setLeadId(id);
+          });
+        }}
+        onContinueContact={() => {
+          setModalStage("path");
+          void upsertLead(buildLeadData(), "formulario", leadId).then((id) => {
+            if (id && !leadId) setLeadId(id);
+          });
+        }}
+        onFinalAction={async (url) => {
+          const id = await upsertLead(buildLeadData(), "formulario", leadId, { clickedWhatsapp: true });
+          if (id && !leadId) setLeadId(id);
+          void sendLeadToDataCrazy(buildLeadData(), "formulario").catch(() => undefined);
+          window.open(url, "_blank");
+        }}
         onChangeField={(field, value) => setContactForm((current) => ({ ...current, [field]: value }))}
         specialistMessage={specialistMessage}
         measurementHelpMessage={measurementHelpMessage}
       />
+
 
       <WhatsappChatSimulado open={chatOpen} onClose={() => setChatOpen(false)} onSwitchToForm={openConsultiveModal} />
 
