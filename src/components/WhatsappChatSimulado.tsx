@@ -66,6 +66,7 @@ export function WhatsappChatSimulado({
       setFotoUrl("");
       setUploading(false);
       setSending(false);
+      setLeadId(null);
     }
   }, [open]);
 
