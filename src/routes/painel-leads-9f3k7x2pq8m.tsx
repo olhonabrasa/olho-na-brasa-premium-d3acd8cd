@@ -212,8 +212,8 @@ function PainelLeads() {
             </thead>
             <tbody>
               {filtered.map((l) => (
-                <>
-                  <tr key={l.id} className="border-b border-white/5 align-top">
+                <Fragment key={l.id}>
+                  <tr className="border-b border-white/5 align-top">
                     <td className="py-2 pr-3 text-xs text-white/70">
                       {new Date(l.created_at).toLocaleString("pt-BR")}
                     </td>
