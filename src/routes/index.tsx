@@ -27,7 +27,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { WhatsappChatSimulado } from "@/components/WhatsappChatSimulado";
-import { sendLeadToDataCrazy } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, markWhatsappClick } from "@/lib/sendLead";
 import { cn } from "@/lib/utils";
 import beforeProjectAsset from "@/assets/olho-na-brasa-antes-1.jpg.asset.json";
 import afterProjectAsset from "@/assets/olho-na-brasa-depois-1.jpg.asset.json";
@@ -1633,7 +1633,7 @@ function ConsultiveModal({
   const canContinueContact = Boolean(form.name.trim() && form.whatsapp.trim() && form.city.trim() && form.state.trim());
 
   const handleFinalAction = async (url: string) => {
-    await sendLeadToDataCrazy(
+    const { leadId } = await sendLeadToDataCrazy(
       {
         nome: form.name,
         whatsapp: form.whatsapp,
@@ -1646,6 +1646,7 @@ function ConsultiveModal({
       },
       "formulario",
     );
+    await markWhatsappClick(leadId);
     window.open(url, "_blank");
   };
 

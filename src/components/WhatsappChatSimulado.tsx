@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Paperclip, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { sendLeadToDataCrazy } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, markWhatsappClick } from "@/lib/sendLead";
 import atendenteAsset from "@/assets/atendente.png.asset.json";
 
 type Msg =
@@ -137,7 +137,7 @@ export function WhatsappChatSimulado({
   const finalize = async () => {
     if (sending) return;
     setSending(true);
-    await sendLeadToDataCrazy(
+    const { leadId } = await sendLeadToDataCrazy(
       {
         nome,
         whatsapp,
@@ -149,12 +149,12 @@ export function WhatsappChatSimulado({
       },
       "chat_whatsapp",
     );
-    const fotoLine = fotoUrl ? `%0A%0AFoto da churrasqueira: ${encodeURIComponent(fotoUrl)}` : "";
     const url = `https://wa.me/554740420956?text=${encodeURIComponent(
       `Olá! Quero montar meu Kit Premium. Vim pela landing page.`,
     )}`;
 
     setStep("done");
+    await markWhatsappClick(leadId);
     window.open(url, "_blank");
     setSending(false);
   };
