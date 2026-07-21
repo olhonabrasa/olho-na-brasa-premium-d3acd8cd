@@ -68,35 +68,7 @@ export async function sendLeadToDataCrazy(
     console.error("DataCrazy webhook error:", err);
   }
 
-  let leadId: string | null = null;
-  try {
-    const { data, error } = await supabase
-      .from("leads")
-      .insert({
-        nome: lead.nome || "",
-        whatsapp: lead.whatsapp || "",
-        email: lead.email || "",
-        cidade: lead.cidade || "",
-        estado: lead.estado || "",
-        estagio: lead.estagio || "",
-        tipo_projeto: lead.tipoProjeto || "",
-        foto_url: lead.fotoUrl || "",
-        origem_captura: origem,
-        clicked_whatsapp: false,
-        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-        page_url: typeof window !== "undefined" ? window.location.href : "",
-        ...utm,
-      })
-      .select("id")
-      .single();
-    if (error) {
-      console.error("Supabase insert lead error:", error);
-    } else {
-      leadId = (data as { id: string } | null)?.id ?? null;
-    }
-  } catch (err) {
-    console.error("Supabase insert lead exception:", err);
-  }
+  const leadId: string | null = null;
 
   if (!leadFired && typeof window !== "undefined" && typeof fbq !== "undefined") {
     leadFired = true;
