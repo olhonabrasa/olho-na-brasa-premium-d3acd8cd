@@ -40,6 +40,7 @@ export function WhatsappChatSimulado({
   const [uploading, setUploading] = useState(false);
   const [fotoUrl, setFotoUrl] = useState("");
   const [sending, setSending] = useState(false);
+  const [leadId, setLeadId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bootedRef = useRef(false);
