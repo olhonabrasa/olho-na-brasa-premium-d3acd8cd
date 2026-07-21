@@ -97,6 +97,19 @@ export function WhatsappChatSimulado({
     if (!nome.trim() || !whatsapp.trim() || !cidade.trim() || !estado.trim()) return;
     pushUser(`${nome}, ${cidade}/${estado.toUpperCase()}`);
     setStep("photo");
+    void upsertLead(
+      {
+        nome,
+        whatsapp,
+        cidade,
+        estado: estado.toUpperCase(),
+        tipoProjeto: "Não informado (via chat WhatsApp)",
+      },
+      "chat_whatsapp",
+      null,
+    ).then((id) => {
+      if (id) setLeadId(id);
+    });
     const first = nome.trim().split(" ")[0];
     await pushBot(`Perfeito, ${first}! 👍`, 900);
     await pushBot("Agora preciso que você envie uma foto da sua churrasqueira ou do projeto.", 1200);
