@@ -147,10 +147,21 @@ export async function upsertLead(
     patch.clicked_whatsapp_at = new Date().toISOString();
   }
 
+  console.log("[saveLead] Iniciando insert/update no Supabase...", {
+    nome: lead.nome,
+    whatsapp: lead.whatsapp,
+    existingId,
+    clickedWhatsapp: clicked,
+  });
+
   try {
     if (existingId) {
       const { error } = await supabase.from("leads").update(patch).eq("id", existingId);
-      if (error) console.error("upsertLead update error:", error);
+      if (error) {
+        console.error("[saveLead] ERRO no update:", error.message, error.details, error.hint);
+        return existingId;
+      }
+      console.log("[saveLead] UPDATE OK, id:", existingId);
       return existingId;
     }
     const insertPayload = {
@@ -167,12 +178,13 @@ export async function upsertLead(
       .select("id")
       .single();
     if (error) {
-      console.error("upsertLead insert error:", error);
+      console.error("[saveLead] ERRO no insert:", error.message, error.details, error.hint);
       return null;
     }
+    console.log("[saveLead] INSERT OK, id:", (data as { id: string } | null)?.id);
     return (data as { id: string } | null)?.id ?? null;
   } catch (err) {
-    console.error("upsertLead exception:", err);
+    console.error("[saveLead] ERRO inesperado:", err);
     return null;
   }
 }
