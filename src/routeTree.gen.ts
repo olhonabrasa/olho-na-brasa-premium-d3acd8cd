@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PainelLeads9f3k7x2pq8mRouteImport } from './routes/painel-leads-9f3k7x2pq8m'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PainelLeads9f3k7x2pq8mRoute = PainelLeads9f3k7x2pq8mRouteImport.update({
+  id: '/painel-leads-9f3k7x2pq8m',
+  path: '/painel-leads-9f3k7x2pq8m',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +31,31 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/painel-leads-9f3k7x2pq8m': typeof PainelLeads9f3k7x2pq8mRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/painel-leads-9f3k7x2pq8m': typeof PainelLeads9f3k7x2pq8mRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/painel-leads-9f3k7x2pq8m': typeof PainelLeads9f3k7x2pq8mRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sitemap.xml'
+  fullPaths: '/' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sitemap.xml'
-  id: '__root__' | '/' | '/sitemap.xml'
+  to: '/' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
+  id: '__root__' | '/' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PainelLeads9f3k7x2pq8mRoute: typeof PainelLeads9f3k7x2pq8mRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/painel-leads-9f3k7x2pq8m': {
+      id: '/painel-leads-9f3k7x2pq8m'
+      path: '/painel-leads-9f3k7x2pq8m'
+      fullPath: '/painel-leads-9f3k7x2pq8m'
+      preLoaderRoute: typeof PainelLeads9f3k7x2pq8mRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,18 +87,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PainelLeads9f3k7x2pq8mRoute: PainelLeads9f3k7x2pq8mRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
