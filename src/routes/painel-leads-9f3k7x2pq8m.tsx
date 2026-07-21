@@ -270,7 +270,7 @@ function PainelLeads() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
