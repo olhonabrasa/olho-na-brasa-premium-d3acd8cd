@@ -1649,6 +1649,7 @@ function ConsultiveModal({
   onContinuePhoto,
   onContinueContact,
   onChangeField,
+  onFinalAction,
   specialistMessage,
   measurementHelpMessage,
 }: {
@@ -1665,30 +1666,20 @@ function ConsultiveModal({
   onContinuePhoto: () => void;
   onContinueContact: () => void;
   onChangeField: (field: keyof ContactForm, value: string) => void;
+  onFinalAction: (url: string) => void | Promise<void>;
   specialistMessage: string;
   measurementHelpMessage: string;
 }) {
   if (!open) return null;
 
   void cityState;
+  void estagio;
+  void projectType;
+  void measurementHelpMessage;
   const canContinueContact = Boolean(form.name.trim() && form.whatsapp.trim() && form.city.trim() && form.state.trim());
 
-  const handleFinalAction = async (url: string) => {
-    const { leadId } = await sendLeadToDataCrazy(
-      {
-        nome: form.name,
-        whatsapp: form.whatsapp,
-        email: form.email,
-        cidade: form.city,
-        estado: form.state.toUpperCase(),
-        estagio: estagio || "",
-        tipoProjeto: projectType ? projectTypeLabels[projectType] : "",
-        fotoUrl: form.photoUrl,
-      },
-      "formulario",
-    );
-    await markWhatsappClick(leadId);
-    window.open(url, "_blank");
+  const handleFinalAction = (url: string) => {
+    void onFinalAction(url);
   };
 
   return (
