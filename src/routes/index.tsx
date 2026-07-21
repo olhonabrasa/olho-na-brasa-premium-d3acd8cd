@@ -453,6 +453,7 @@ function LandingPage() {
     setModalStage("stage");
     setProjectType(null);
     setProjectMomentLabel("");
+    setLeadId(null);
   };
 
   const closeConsultiveModal = () => {
@@ -460,6 +461,7 @@ function LandingPage() {
     setModalStage("stage");
     setProjectType(null);
     setProjectMomentLabel("");
+    setLeadId(null);
   };
 
   const openChatSimulado = () => {
