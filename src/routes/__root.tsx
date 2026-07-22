@@ -115,6 +115,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
     scripts: [
+      { children: GTM_SCRIPT },
       {
         type: "text/javascript",
         children: META_PIXEL_SCRIPT,
