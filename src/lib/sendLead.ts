@@ -225,3 +225,13 @@ export async function upsertLead(
     return null;
   }
 }
+
+export function trackWhatsappClick(local: string, url?: string) {
+  if (typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: "whatsapp_click",
+    wa_local: local,
+    wa_url: url || "",
+  });
+}
