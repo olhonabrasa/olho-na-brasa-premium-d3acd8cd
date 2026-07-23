@@ -42,17 +42,36 @@ function newEventId() {
   return "lead-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
 }
 
+const TRACK_KEYS = [
+  "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
+  "gclid", "gbraid", "wbraid", "fbclid",
+];
+
+function getTracking(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const out: Record<string, string> = {};
+  const params = new URLSearchParams(window.location.search);
+  let achou = false;
+  TRACK_KEYS.forEach((k) => {
+    const v = params.get(k);
+    if (v) { out[k] = v; achou = true; }
+  });
+  try {
+    if (achou) {
+      sessionStorage.setItem("onb_tracking", JSON.stringify(out));
+      return out;
+    }
+    const salvo = sessionStorage.getItem("onb_tracking");
+    if (salvo) return JSON.parse(salvo);
+  } catch (e) { /* sessionStorage indisponivel */ }
+  return out;
+}
+
 export async function sendLeadToDataCrazy(
   lead: LeadData,
   origem: LeadOrigem,
 ): Promise<{ leadId: string | null }> {
-  const params = new URLSearchParams(window.location.search);
-  const utm = {
-    utm_source: params.get("utm_source") || "direct",
-    utm_medium: params.get("utm_medium") || "",
-    utm_campaign: params.get("utm_campaign") || "",
-    utm_content: params.get("utm_content") || "",
-  };
+  const t = getTracking();
   const payload = {
     whatsapp: lead.whatsapp || "",
     email: lead.email || "",
@@ -65,9 +84,19 @@ export async function sendLeadToDataCrazy(
     estado: lead.estado || "",
     fotoUrl: lead.fotoUrl || "",
     origem_captura: origem,
-    ...utm,
+    utm_source: t.utm_source || "direct",
+    utm_medium: t.utm_medium || "",
+    utm_campaign: t.utm_campaign || "",
+    utm_content: t.utm_content || "",
+    utm_term: t.utm_term || "",
+    gclid: t.gclid || "",
+    gbraid: t.gbraid || "",
+    wbraid: t.wbraid || "",
+    fbclid: t.fbclid || "",
+    referrer: typeof document !== "undefined" ? document.referrer : "",
+    landing_url: typeof window !== "undefined" ? window.location.href : "",
   };
-  console.log("Enviando para DataCrazy:", JSON.stringify(payload));
+  console.log("Lead enviado:", payload.origem_captura, payload.utm_campaign);
   try {
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
