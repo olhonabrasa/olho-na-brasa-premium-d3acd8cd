@@ -163,6 +163,29 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      const link = alvo?.closest?.(
+        "a[href*='wa.me'], a[href*='api.whatsapp.com']"
+      ) as HTMLAnchorElement | null;
+      if (!link) return;
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "whatsapp_click",
+        wa_local:
+          link.getAttribute("aria-label") ||
+          link.textContent?.trim().slice(0, 60) ||
+          "link",
+        wa_url: link.href,
+      });
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+
+
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
