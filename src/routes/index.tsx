@@ -2034,8 +2034,8 @@ function ProjectTypeCard({
       )}
     >
       {image ? (
-        <div className="aspect-[16/10] w-full overflow-hidden bg-black/40">
-          <img src={image} alt={title} className="h-full w-full object-contain" loading="lazy" />
+        <div className="aspect-[4/3] w-full overflow-hidden bg-white">
+          <img src={image} alt={title} className="h-full w-full object-cover" loading="lazy" />
         </div>
       ) : null}
       <div className="px-5 py-4">
