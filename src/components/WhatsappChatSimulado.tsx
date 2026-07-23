@@ -183,6 +183,7 @@ export function WhatsappChatSimulado({
     )}`;
 
     setStep("done");
+    trackWhatsappClick("chat_simulado_especialista", url);
     window.open(url, "_blank");
     setSending(false);
   };
