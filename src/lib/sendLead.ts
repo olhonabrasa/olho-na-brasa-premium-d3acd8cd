@@ -3,6 +3,9 @@ import { supabase } from "./supabase";
 declare global {
   // eslint-disable-next-line no-var
   var fbq: ((...args: unknown[]) => void) | undefined;
+  interface Window {
+    dataLayer?: Record<string, unknown>[];
+  }
 }
 
 export type LeadOrigem = "chat_whatsapp" | "formulario";
@@ -30,6 +33,14 @@ const formatPhone = (phone: string) => {
 const normalize = (v: string) => v.trim().toLowerCase();
 
 let leadFired = false;
+let leadPushed = false;
+
+function newEventId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return "lead-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+}
 
 export async function sendLeadToDataCrazy(
   lead: LeadData,
@@ -88,6 +99,32 @@ export async function sendLeadToDataCrazy(
       content_category: lead.tipoProjeto || "Kit completo",
       value: 3500,
       currency: "BRL",
+    });
+  }
+
+  if (!leadPushed && typeof window !== "undefined") {
+    leadPushed = true;
+    const partes = (lead.nome || "").trim().split(" ");
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "generate_lead",
+      lead_id: newEventId(),
+      lead_origem: origem,
+      lead_tipo_projeto: lead.tipoProjeto || "",
+      lead_cidade: lead.cidade || "",
+      lead_estado: lead.estado || "",
+      lead_currency: "BRL",
+      user_data: {
+        email: (lead.email || "").trim().toLowerCase(),
+        phone_number: "+" + formatPhone(lead.whatsapp),
+        address: {
+          first_name: (partes[0] || "").trim().toLowerCase(),
+          last_name: (partes.slice(1).join(" ") || "").trim().toLowerCase(),
+          city: (lead.cidade || "").trim().toLowerCase(),
+          region: (lead.estado || "").trim().toLowerCase(),
+          country: "BR",
+        },
+      },
     });
   }
 
