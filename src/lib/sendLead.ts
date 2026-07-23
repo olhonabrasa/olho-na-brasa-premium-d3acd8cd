@@ -3,6 +3,9 @@ import { supabase } from "./supabase";
 declare global {
   // eslint-disable-next-line no-var
   var fbq: ((...args: unknown[]) => void) | undefined;
+  interface Window {
+    dataLayer?: Record<string, unknown>[];
+  }
 }
 
 export type LeadOrigem = "chat_whatsapp" | "formulario";
