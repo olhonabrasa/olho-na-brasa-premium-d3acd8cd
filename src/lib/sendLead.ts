@@ -33,6 +33,14 @@ const formatPhone = (phone: string) => {
 const normalize = (v: string) => v.trim().toLowerCase();
 
 let leadFired = false;
+let leadPushed = false;
+
+function newEventId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return "lead-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+}
 
 export async function sendLeadToDataCrazy(
   lead: LeadData,
