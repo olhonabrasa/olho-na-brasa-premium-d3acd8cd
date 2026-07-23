@@ -112,8 +112,8 @@ export function WhatsappChatSimulado({
     });
     const first = nome.trim().split(" ")[0];
     await pushBot(`Perfeito, ${first}! 👍`, 900);
-    await pushBot("Agora preciso que você envie uma foto da sua churrasqueira ou do projeto.", 1200);
-    await pushBot("Assim consigo te passar o orçamento certinho, sem erro nas medidas.", 1200);
+    await pushBot("Perfeito! Se quiser, envie uma foto da sua churrasqueira ou do projeto — ajuda no orçamento, mas é opcional.", 1200);
+    await pushBot("Você também pode seguir direto para falar com o especialista.", 1200);
   };
 
   const handlePhoto = async (file: File) => {
