@@ -27,7 +27,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { WhatsappChatSimulado } from "@/components/WhatsappChatSimulado";
-import { sendLeadToDataCrazy, markWhatsappClick, upsertLead } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, markWhatsappClick, upsertLead, trackWhatsappClick } from "@/lib/sendLead";
 import { cn } from "@/lib/utils";
 import beforeProjectAsset from "@/assets/olho-na-brasa-antes-1.jpg.asset.json";
 import afterProjectAsset from "@/assets/olho-na-brasa-depois-1.jpg.asset.json";
@@ -558,6 +558,7 @@ function LandingPage() {
           const id = await upsertLead(buildLeadData(), "formulario", leadId, { clickedWhatsapp: true });
           if (id && !leadId) setLeadId(id);
           void sendLeadToDataCrazy(buildLeadData(), "formulario").catch(() => undefined);
+          trackWhatsappClick("cta_falar_especialista", url);
           window.open(url, "_blank");
         }}
         onChangeField={(field, value) => setContactForm((current) => ({ ...current, [field]: value }))}
