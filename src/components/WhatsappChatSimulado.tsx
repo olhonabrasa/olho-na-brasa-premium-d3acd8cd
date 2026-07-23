@@ -361,6 +361,19 @@ export function WhatsappChatSimulado({
                     if (f) void handlePhoto(f);
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (uploading) return;
+                    pushUser("Prefiro seguir sem foto");
+                    setStep("ready");
+                    await pushBot("Sem problema! Vou te transferir para um especialista finalizar seu orçamento no WhatsApp. Só clicar abaixo 👇", 1200);
+                  }}
+                  disabled={uploading}
+                  className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md border border-white/15 bg-transparent px-3 py-2 text-xs font-medium text-white/80 hover:bg-white/5 disabled:opacity-40"
+                >
+                  Continuar sem enviar foto
+                </button>
               </div>
             ) : null}
 
