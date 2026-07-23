@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Paperclip, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { sendLeadToDataCrazy, upsertLead } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick } from "@/lib/sendLead";
 import atendenteAsset from "@/assets/atendente.png.asset.json";
 
 type Msg =
