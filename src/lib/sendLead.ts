@@ -102,6 +102,32 @@ export async function sendLeadToDataCrazy(
     });
   }
 
+  if (!leadPushed && typeof window !== "undefined") {
+    leadPushed = true;
+    const partes = (lead.nome || "").trim().split(" ");
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "generate_lead",
+      lead_id: newEventId(),
+      lead_origem: origem,
+      lead_tipo_projeto: lead.tipoProjeto || "",
+      lead_cidade: lead.cidade || "",
+      lead_estado: lead.estado || "",
+      lead_currency: "BRL",
+      user_data: {
+        email: (lead.email || "").trim().toLowerCase(),
+        phone_number: "+" + formatPhone(lead.whatsapp),
+        address: {
+          first_name: (partes[0] || "").trim().toLowerCase(),
+          last_name: (partes.slice(1).join(" ") || "").trim().toLowerCase(),
+          city: (lead.cidade || "").trim().toLowerCase(),
+          region: (lead.estado || "").trim().toLowerCase(),
+          country: "BR",
+        },
+      },
+    });
+  }
+
   return { leadId };
 }
 
