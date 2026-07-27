@@ -419,6 +419,10 @@ function LandingPage() {
           address: { "@type": "PostalAddress", addressRegion: "SC", addressCountry: "BR" },
           sameAs: [SITE_URL, INSTAGRAM_URL],
           description: "Fábrica de grelhas e acessórios premium em inox 304 sob medida para churrasqueiras.",
+          priceRange: "$$$",
+          areaServed: { "@type": "Country", name: "Brasil" },
+          foundingDate: "2019",
+          aggregateRating: { "@type": "AggregateRating", ratingValue: "4.8", reviewCount: "44" },
         },
         {
           "@type": "Product",
@@ -427,6 +431,47 @@ function LandingPage() {
           image: [afterProjectAsset.url, beforeProjectAsset.url],
           description: "Kit premium em inox 304 alimentício, sob medida, com 15 anos de garantia.",
           url: KITS_URL,
+          material: "Aço inox 304",
+          manufacturer: { "@type": "Organization", name: "Olho na Brasa" },
+          warranty: "15 anos",
+          aggregateRating: { "@type": "AggregateRating", ratingValue: "4.8", reviewCount: "44" },
+        },
+        {
+          "@type": "FAQPage",
+          mainEntity: [
+            {
+              "@type": "Question",
+              name: "O Kit Suporte Suspenso é feito em inox 304 de verdade?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Sim. Todo o kit é fabricado em aço inox 304 alimentício, o mesmo padrão usado em áreas litorâneas por não enferrujar nem com a maresia. O ímã não gruda no inox 304 — é a forma simples de verificar.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "O kit é sob medida para a minha churrasqueira?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Sim. Cada kit é fabricado sob medida a partir das dimensões da sua churrasqueira, enviadas pelo WhatsApp. Fabricação própria em Itapema/SC.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "Qual a garantia do Kit Suporte Suspenso?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "15 anos de garantia real contra defeitos de fabricação, por ser inox 304 com 6 etapas de polimento.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "Como é feita a instalação do kit?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "A instalação é rápida, com apenas 4 parafusos e buchas especiais, sem obra e sem necessidade de apoio frontal.",
+              },
+            },
+          ],
         },
       ],
     }),
