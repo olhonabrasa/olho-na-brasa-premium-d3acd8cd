@@ -70,7 +70,7 @@ function getTracking(): Record<string, string> {
 export async function sendLeadToDataCrazy(
   lead: LeadData,
   origem: LeadOrigem,
-): Promise<{ leadId: string | null }> {
+): Promise<string | null> {
   const t = getTracking();
   const payload = {
     whatsapp: lead.whatsapp || "",
