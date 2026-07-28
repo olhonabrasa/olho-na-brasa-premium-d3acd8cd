@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PainelLeads9f3k7x2pq8mRouteImport } from './routes/painel-leads-9f3k7x2pq8m'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -23,6 +24,11 @@ const PainelLeads9f3k7x2pq8mRoute = PainelLeads9f3k7x2pq8mRouteImport.update({
   path: '/painel-leads-9f3k7x2pq8m',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,30 +37,34 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/painel-leads-9f3k7x2pq8m': typeof PainelLeads9f3k7x2pq8mRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/painel-leads-9f3k7x2pq8m': typeof PainelLeads9f3k7x2pq8mRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/painel-leads-9f3k7x2pq8m': typeof PainelLeads9f3k7x2pq8mRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
+  fullPaths: '/' | '/admin' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
-  id: '__root__' | '/' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
+  to: '/' | '/admin' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
+  id: '__root__' | '/' | '/admin' | '/painel-leads-9f3k7x2pq8m' | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   PainelLeads9f3k7x2pq8mRoute: typeof PainelLeads9f3k7x2pq8mRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelLeads9f3k7x2pq8mRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   PainelLeads9f3k7x2pq8mRoute: PainelLeads9f3k7x2pq8mRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
