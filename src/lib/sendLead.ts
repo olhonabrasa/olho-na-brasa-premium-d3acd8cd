@@ -294,3 +294,15 @@ export function trackWhatsappClick(local: string, url?: string) {
     wa_url: url || "",
   });
 }
+
+export async function markWhatsappClicked(leadId: string | null) {
+  if (!leadId) return;
+  try {
+    await supabase
+      .from("leads")
+      .update({ clicked_whatsapp: true, clicked_whatsapp_at: new Date().toISOString() })
+      .eq("id", leadId);
+  } catch (e) {
+    console.warn("[leads] update clique falhou:", e);
+  }
+}
