@@ -187,7 +187,7 @@ export async function sendLeadToDataCrazy(
     });
   }
 
-  return { leadId };
+  return leadId;
 }
 
 export async function markWhatsappClick(leadId: string | null) {
