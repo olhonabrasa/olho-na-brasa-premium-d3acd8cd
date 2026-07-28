@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Paperclip, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick, markWhatsappClicked } from "@/lib/sendLead";
 import atendenteAsset from "@/assets/atendente.png.asset.json";
 
 type Msg =
@@ -177,7 +177,7 @@ export function WhatsappChatSimulado({
     };
     const savedId = await upsertLead(leadData, "chat_whatsapp", leadId, { clickedWhatsapp: true });
     if (savedId && !leadId) setLeadId(savedId);
-    void sendLeadToDataCrazy(leadData, "chat_whatsapp").catch(() => undefined);
+    const dcLeadId = await sendLeadToDataCrazy(leadData, "chat_whatsapp").catch(() => null);
     const url = `https://wa.me/554740420956?text=${encodeURIComponent(
       `Olá! Quero montar meu Kit Premium. Vim pela landing page.`,
     )}`;
@@ -185,6 +185,7 @@ export function WhatsappChatSimulado({
     setStep("done");
     trackWhatsappClick("chat_simulado_especialista", url);
     window.open(url, "_blank");
+    void markWhatsappClicked(dcLeadId);
     setSending(false);
   };
 
