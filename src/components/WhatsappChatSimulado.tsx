@@ -177,7 +177,7 @@ export function WhatsappChatSimulado({
     };
     const savedId = await upsertLead(leadData, "chat_whatsapp", leadId, { clickedWhatsapp: true });
     if (savedId && !leadId) setLeadId(savedId);
-    void sendLeadToDataCrazy(leadData, "chat_whatsapp").catch(() => undefined);
+    const dcLeadId = await sendLeadToDataCrazy(leadData, "chat_whatsapp").catch(() => null);
     const url = `https://wa.me/554740420956?text=${encodeURIComponent(
       `Olá! Quero montar meu Kit Premium. Vim pela landing page.`,
     )}`;
@@ -185,6 +185,7 @@ export function WhatsappChatSimulado({
     setStep("done");
     trackWhatsappClick("chat_simulado_especialista", url);
     window.open(url, "_blank");
+    void markWhatsappClicked(dcLeadId);
     setSending(false);
   };
 
