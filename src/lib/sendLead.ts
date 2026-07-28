@@ -108,7 +108,37 @@ export async function sendLeadToDataCrazy(
     console.error("DataCrazy webhook error:", err);
   }
 
-  const leadId: string | null = null;
+  let leadId: string | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      const params2 = new URLSearchParams(window.location.search);
+      const { data: inserted, error: insErr } = await supabase
+        .from("leads")
+        .insert({
+          nome: lead.nome || null,
+          whatsapp: lead.whatsapp || null,
+          email: lead.email || null,
+          cidade: lead.cidade || null,
+          estado: lead.estado || null,
+          estagio: lead.estagio || null,
+          tipo_projeto: lead.tipoProjeto || null,
+          foto_url: lead.fotoUrl || null,
+          origem_captura: origem,
+          utm_source: params2.get("utm_source") || "direct",
+          utm_medium: params2.get("utm_medium") || null,
+          utm_campaign: params2.get("utm_campaign") || null,
+          utm_content: params2.get("utm_content") || null,
+          page_url: window.location.href,
+          user_agent: navigator.userAgent,
+        })
+        .select("id")
+        .single();
+      if (insErr) console.warn("[leads] insert falhou:", insErr.message);
+      else leadId = (inserted as { id: string } | null)?.id ?? null;
+    } catch (e) {
+      console.warn("[leads] insert exception:", e);
+    }
+  }
 
   if (!leadFired && typeof window !== "undefined" && typeof fbq !== "undefined") {
     leadFired = true;
