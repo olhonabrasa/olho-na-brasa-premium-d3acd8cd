@@ -558,8 +558,6 @@ function LandingPage() {
           <Divider />
           <FaqSection onOpenModal={openConsultiveModal} />
           <Divider />
-          <PromoBannerPais onOpenModal={openConsultiveModal} />
-          <Divider />
           <FinalCtaSection onOpenModal={openConsultiveModal} />
         </main>
 
