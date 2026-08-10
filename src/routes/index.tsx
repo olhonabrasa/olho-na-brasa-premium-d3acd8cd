@@ -1537,61 +1537,8 @@ function FaqSection({ onOpenModal }: { onOpenModal: () => void }) {
 }
 
 /* ===================== CTA FINAL ===================== */
-function PromoTopBar({ onOpenModal }: { onOpenModal: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onOpenModal}
-      className="sticky top-0 z-40 flex w-full items-center justify-center gap-2 bg-primary px-4 py-2.5 text-center text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-strong sm:text-sm"
-    >
-      🔥 DIA DOS PAIS: 10% OFF no Kit Suporte Suspenso
-      <span className="hidden underline underline-offset-2 sm:inline">Garantir agora</span>
-    </button>
-  );
-}
 
-function PromoBannerPais({ onOpenModal }: { onOpenModal: () => void }) {
-  return (
-    <section className="promo-pais section-dark relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-70"
-        style={{
-          background:
-            "radial-gradient(60% 120% at 85% 50%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 70%)",
-        }}
-        aria-hidden="true"
-      />
-      <div className="relative mx-auto flex max-w-(--container-max) flex-col items-center gap-6 px-5 py-12 text-center lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:py-16 lg:text-left">
-        <div className="lg:flex-1">
-          <p className="font-display italic text-foreground/90" style={{ fontSize: "clamp(1.1rem, 3.4vw, 1.75rem)" }}>
-            Seu pai merece o melhor
-          </p>
-          <p className="font-display font-bold leading-[0.9]" style={{ fontSize: "clamp(3.2rem, 13vw, 6.5rem)" }}>
-            <span className="text-primary">10%</span>
-            <span className="text-foreground"> OFF</span>
-          </p>
-          <p className="mt-2 text-secondary-foreground" style={{ fontSize: "clamp(0.95rem, 2.6vw, 1.15rem)" }}>
-            No seu <strong className="text-foreground">Kit Suporte Suspenso</strong>. A vida é melhor com{" "}
-            <span className="font-semibold text-primary">churrasco.</span>
-          </p>
-        </div>
-        <div className="flex flex-col items-center gap-3 lg:items-end">
-          <button
-            type="button"
-            onClick={onOpenModal}
-            className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-primary px-7 text-sm font-bold uppercase tracking-[0.03em] text-primary-foreground shadow-fire transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-strong"
-          >
-            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-            QUERO MEU KIT COM 10% OFF
-          </button>
-          <p className="max-w-xs text-xs text-muted-foreground">
-            *Válido por tempo limitado ou enquanto durar os estoques.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
+
 
 function FinalCtaSection({ onOpenModal }: { onOpenModal: () => void }) {
   return (
