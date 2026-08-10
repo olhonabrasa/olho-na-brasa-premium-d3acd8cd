@@ -535,7 +535,7 @@ function LandingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaMarkup) }} />
 
       <div className="bg-background text-foreground">
-        <PromoTopBar onOpenModal={openConsultiveModal} />
+        
         <main>
           <HeroSection onOpenModal={openConsultiveModal} />
           <Divider />
