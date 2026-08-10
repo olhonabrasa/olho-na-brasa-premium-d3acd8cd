@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Projeto Supabase usado pela landing page (leads, storage de fotos e painel admin).
+// A chave publishable pode ficar no código — o acesso é controlado por RLS.
 const supabaseUrl = "https://pwpfpseatkwluahjqclc.supabase.co";
-const supabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3cGZwc2VhdGt3bHVhaGpxY2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwMTE3ODcsImV4cCI6MjA5ODU4Nzc4N30.-GVNob3emozEd62PB4mVJ-A-FXWEp_uO-ccnx8egimk";
+const supabasePublishableKey = "sb_publishable_wubznX7fTM8oRiJK1vAf3A_LBZVVGzd";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabasePublishableKey);
