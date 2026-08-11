@@ -80,7 +80,7 @@ export async function sendLeadToDataCrazy(
     projeto: lead.tipoProjeto || "",
     prazo: "Agora",
     investimento: "",
-    cidade: lead.cep || "",
+    cep: lead.cep || "",
     estado: lead.estado || "",
     fotoUrl: lead.fotoUrl || "",
     origem_captura: origem,
