@@ -14,7 +14,7 @@ export type LeadData = {
   nome: string;
   whatsapp: string;
   email?: string;
-  cidade: string;
+  cep: string;
   estado?: string;
   estagio?: string;
   tipoProjeto?: string;
@@ -80,7 +80,7 @@ export async function sendLeadToDataCrazy(
     projeto: lead.tipoProjeto || "",
     prazo: "Agora",
     investimento: "",
-    cidade: lead.cidade || "",
+    cep: lead.cep || "",
     estado: lead.estado || "",
     fotoUrl: lead.fotoUrl || "",
     origem_captura: origem,
@@ -118,7 +118,7 @@ export async function sendLeadToDataCrazy(
           nome: lead.nome || null,
           whatsapp: lead.whatsapp || null,
           email: lead.email || null,
-          cidade: lead.cidade || null,
+          cidade: lead.cep || null,
           estado: lead.estado || null,
           estagio: lead.estagio || null,
           tipo_projeto: lead.tipoProjeto || null,
@@ -149,7 +149,7 @@ export async function sendLeadToDataCrazy(
       ph: formatPhone(lead.whatsapp),
       fn: normalize(firstName),
       ln: normalize(lastName),
-      ct: normalize(lead.cidade || ""),
+      zp: (lead.cep || "").replace(/\D/g, ""),
       country: "br",
       external_id: formatPhone(lead.whatsapp),
     });
@@ -170,7 +170,7 @@ export async function sendLeadToDataCrazy(
       lead_id: newEventId(),
       lead_origem: origem,
       lead_tipo_projeto: lead.tipoProjeto || "",
-      lead_cidade: lead.cidade || "",
+      lead_cep: lead.cep || "",
       lead_estado: lead.estado || "",
       lead_currency: "BRL",
       user_data: {
@@ -179,7 +179,7 @@ export async function sendLeadToDataCrazy(
         address: {
           first_name: (partes[0] || "").trim().toLowerCase(),
           last_name: (partes.slice(1).join(" ") || "").trim().toLowerCase(),
-          city: (lead.cidade || "").trim().toLowerCase(),
+          postal_code: (lead.cep || "").replace(/\D/g, ""),
           region: (lead.estado || "").trim().toLowerCase(),
           country: "BR",
         },
@@ -231,7 +231,7 @@ export async function upsertLead(
     nome: lead.nome || "",
     whatsapp: lead.whatsapp || "",
     email: lead.email || "",
-    cidade: lead.cidade || "",
+    cidade: lead.cep || "",
     estado: lead.estado || "",
     estagio: lead.estagio || "",
     tipo_projeto: lead.tipoProjeto || "",

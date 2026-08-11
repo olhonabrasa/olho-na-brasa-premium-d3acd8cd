@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Paperclip, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { formatCep, isValidCep } from "@/lib/cep";
 import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick, markWhatsappClicked } from "@/lib/sendLead";
 import atendenteAsset from "@/assets/atendente.png.asset.json";
 
@@ -35,7 +36,7 @@ export function WhatsappChatSimulado({
   const [step, setStep] = useState<Step>("identify");
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [cidade, setCidade] = useState("");
+  const [cep, setCep] = useState("");
   const [estado, setEstado] = useState("");
   const [uploading, setUploading] = useState(false);
   const [fotoUrl, setFotoUrl] = useState("");
@@ -61,7 +62,7 @@ export function WhatsappChatSimulado({
       setStep("identify");
       setNome("");
       setWhatsapp("");
-      setCidade("");
+      setCep("");
       setEstado("");
       setFotoUrl("");
       setUploading(false);
@@ -90,18 +91,18 @@ export function WhatsappChatSimulado({
   const bootConversation = async () => {
     await pushBot("Olá, tudo bem? 🔥", 900);
     await pushBot("Seja bem-vindo ao Olho na Brasa!", 1000);
-    await pushBot("Para agilizar seu orçamento, me diga seu nome completo, cidade e estado.", 1200);
+    await pushBot("Para agilizar seu orçamento, me diga seu nome completo, CEP e estado.", 1200);
   };
 
   const submitIdentify = async () => {
-    if (!nome.trim() || !whatsapp.trim() || !cidade.trim() || !estado.trim()) return;
-    pushUser(`${nome}, ${cidade}/${estado.toUpperCase()}`);
+    if (!nome.trim() || !whatsapp.trim() || !isValidCep(cep) || !estado.trim()) return;
+    pushUser(`${nome}, ${cep}/${estado.toUpperCase()}`);
     setStep("photo");
     void upsertLead(
       {
         nome,
         whatsapp,
-        cidade,
+        cep,
         estado: estado.toUpperCase(),
         tipoProjeto: "Não informado (via chat WhatsApp)",
       },
@@ -140,7 +141,7 @@ export function WhatsappChatSimulado({
         {
           nome,
           whatsapp,
-          cidade,
+          cep,
           estado: estado.toUpperCase(),
           tipoProjeto: "Não informado (via chat WhatsApp)",
           fotoUrl: urlData.publicUrl,
@@ -169,7 +170,7 @@ export function WhatsappChatSimulado({
     const leadData = {
       nome,
       whatsapp,
-      cidade,
+      cep,
       estado: estado.toUpperCase(),
       estagio: "",
       tipoProjeto: "Não informado (via chat WhatsApp)",
@@ -307,9 +308,12 @@ export function WhatsappChatSimulado({
                   />
                   <div className="grid grid-cols-[1fr_80px] gap-2">
                     <input
-                      value={cidade}
-                      onChange={(e) => setCidade(e.target.value)}
-                      placeholder="Cidade"
+                      value={cep}
+                      onChange={(e) => setCep(formatCep(e.target.value))}
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      maxLength={9}
+                      placeholder="CEP 00000-000"
                       className="rounded-md bg-black/30 px-3 py-2 text-sm outline-none placeholder:text-white/40"
                     />
                     <input
@@ -323,7 +327,7 @@ export function WhatsappChatSimulado({
                   <button
                     type="button"
                     onClick={submitIdentify}
-                    disabled={!nome || !whatsapp || !cidade || !estado}
+                    disabled={!nome || !whatsapp || !isValidCep(cep) || !estado}
                     className="mt-1 inline-flex items-center justify-center gap-2 rounded-md bg-[#00A884] px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
                   >
                     <Send className="h-4 w-4" /> Enviar

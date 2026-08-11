@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { WhatsappChatSimulado } from "@/components/WhatsappChatSimulado";
 import { sendLeadToDataCrazy, markWhatsappClick, markWhatsappClicked, upsertLead, trackWhatsappClick } from "@/lib/sendLead";
+import { formatCep, isValidCep } from "@/lib/cep";
 import { cn } from "@/lib/utils";
 import beforeProjectAsset from "@/assets/olho-na-brasa-antes-1.jpg.asset.json";
 import afterProjectAsset from "@/assets/olho-na-brasa-depois-1.jpg.asset.json";
@@ -121,7 +122,7 @@ const projectMomentLabels: Record<NonNullable<ProjectMoment>, string> = {
 type ContactForm = {
   name: string;
   whatsapp: string;
-  city: string;
+  cep: string;
   state: string;
   email: string;
   photoUrl: string;
@@ -382,7 +383,7 @@ function LandingPage() {
   const [contactForm, setContactForm] = useState<ContactForm>({
     name: "",
     whatsapp: "",
-    city: "",
+    cep: "",
     state: "",
     email: "",
     photoUrl: "",
@@ -392,7 +393,7 @@ function LandingPage() {
     nome: contactForm.name,
     whatsapp: contactForm.whatsapp,
     email: contactForm.email,
-    cidade: contactForm.city,
+    cep: contactForm.cep,
     estado: contactForm.state.toUpperCase(),
     estagio: overrides?.estagio ?? projectMomentLabel,
     tipoProjeto:
@@ -516,7 +517,7 @@ function LandingPage() {
 
   const formattedWhatsapp = formatWhatsapp(contactForm.whatsapp);
 
-  const cityState = contactForm.state ? `${contactForm.city}/${contactForm.state.toUpperCase()}` : contactForm.city;
+  const cityState = contactForm.state ? `${contactForm.cep}/${contactForm.state.toUpperCase()}` : contactForm.cep;
 
   const specialistMessage = buildWhatsappMessage({
     intro: "Olá! Quero montar meu Kit Premium.",
@@ -1668,7 +1669,9 @@ function ConsultiveModal({
   void estagio;
   void projectType;
   void measurementHelpMessage;
-  const canContinueContact = Boolean(form.name.trim() && form.whatsapp.trim() && form.city.trim() && form.state.trim());
+  const canContinueContact = Boolean(
+    form.name.trim() && form.whatsapp.trim() && isValidCep(form.cep) && form.state.trim(),
+  );
 
   const handleFinalAction = (url: string) => {
     void onFinalAction(url);
@@ -1797,12 +1800,20 @@ function ConsultiveModal({
                   />
                 </LabelField>
                 <div className="grid grid-cols-[1fr_100px] gap-3">
-                  <LabelField label="Cidade">
+                  <LabelField label="CEP">
                     <input
-                      value={form.city}
-                      onChange={(e) => onChangeField("city", e.target.value)}
+                      value={form.cep}
+                      onChange={(e) => onChangeField("cep", formatCep(e.target.value))}
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      maxLength={9}
+                      placeholder="00000-000"
                       className="field-base"
+                      aria-invalid={form.cep.length > 0 && !isValidCep(form.cep)}
                     />
+                    {form.cep.length > 0 && !isValidCep(form.cep) ? (
+                      <span className="mt-1 block text-xs text-destructive">Use o formato 00000-000</span>
+                    ) : null}
                   </LabelField>
                   <LabelField label="Estado">
                     <input
