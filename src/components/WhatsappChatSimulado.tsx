@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Paperclip, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { formatCep, isValidCep } from "@/lib/cep";
+import { formatCep, isValidCep, lookupCep } from "@/lib/cep";
+import { isValidEmail } from "@/lib/email";
 import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick, markWhatsappClicked } from "@/lib/sendLead";
 import atendenteAsset from "@/assets/atendente.png.asset.json";
 
@@ -36,6 +37,9 @@ export function WhatsappChatSimulado({
   const [step, setStep] = useState<Step>("identify");
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [validatingCep, setValidatingCep] = useState(false);
   const [cep, setCep] = useState("");
   const [estado, setEstado] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -62,6 +66,9 @@ export function WhatsappChatSimulado({
       setStep("identify");
       setNome("");
       setWhatsapp("");
+      setEmail("");
+      setCidade("");
+      setValidatingCep(false);
       setCep("");
       setEstado("");
       setFotoUrl("");
@@ -96,14 +103,33 @@ export function WhatsappChatSimulado({
 
   const submitIdentify = async () => {
     if (!nome.trim() || !whatsapp.trim() || !isValidCep(cep) || !estado.trim()) return;
-    pushUser(`${nome}, ${cep}/${estado.toUpperCase()}`);
+    if (!isValidEmail(email)) return;
+    if (validatingCep) return;
+    setValidatingCep(true);
+    const cepResult = await lookupCep(cep);
+    setValidatingCep(false);
+    if (!cepResult.ok) {
+      await pushBot(cepResult.msg, 700);
+      return;
+    }
+    let uf = estado.toUpperCase();
+    let city = cidade;
+    if (cepResult.data) {
+      uf = cepResult.data.uf || uf;
+      city = cepResult.data.cidade;
+      setEstado(uf);
+      setCidade(city);
+    }
+    pushUser(`${nome}, ${cep}/${uf}`);
     setStep("photo");
     void upsertLead(
       {
         nome,
         whatsapp,
+        email,
         cep,
-        estado: estado.toUpperCase(),
+        cidade: city,
+        estado: uf,
         tipoProjeto: "Não informado (via chat WhatsApp)",
       },
       "chat_whatsapp",
@@ -141,7 +167,9 @@ export function WhatsappChatSimulado({
         {
           nome,
           whatsapp,
+          email,
           cep,
+          cidade,
           estado: estado.toUpperCase(),
           tipoProjeto: "Não informado (via chat WhatsApp)",
           fotoUrl: urlData.publicUrl,
@@ -170,7 +198,9 @@ export function WhatsappChatSimulado({
     const leadData = {
       nome,
       whatsapp,
+      email,
       cep,
+      cidade,
       estado: estado.toUpperCase(),
       estagio: "",
       tipoProjeto: "Não informado (via chat WhatsApp)",
@@ -306,6 +336,13 @@ export function WhatsappChatSimulado({
                     inputMode="tel"
                     className="rounded-md bg-black/30 px-3 py-2 text-sm outline-none placeholder:text-white/40"
                   />
+                  <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email"
+                    placeholder="seu@email.com"
+                    className="rounded-md bg-black/30 px-3 py-2 text-sm outline-none placeholder:text-white/40"
+                  />
                   <div className="grid grid-cols-[1fr_80px] gap-2">
                     <input
                       value={cep}
@@ -327,10 +364,10 @@ export function WhatsappChatSimulado({
                   <button
                     type="button"
                     onClick={submitIdentify}
-                    disabled={!nome || !whatsapp || !isValidCep(cep) || !estado}
+                    disabled={!nome || !whatsapp || !isValidEmail(email) || !isValidCep(cep) || !estado || validatingCep}
                     className="mt-1 inline-flex items-center justify-center gap-2 rounded-md bg-[#00A884] px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
                   >
-                    <Send className="h-4 w-4" /> Enviar
+                    <Send className="h-4 w-4" /> {validatingCep ? "Validando..." : "Enviar"}
                   </button>
                 </div>
               </div>

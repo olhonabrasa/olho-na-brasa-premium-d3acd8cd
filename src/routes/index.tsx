@@ -28,7 +28,8 @@ import { Button } from "@/components/ui/button";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { WhatsappChatSimulado } from "@/components/WhatsappChatSimulado";
 import { sendLeadToDataCrazy, markWhatsappClick, markWhatsappClicked, upsertLead, trackWhatsappClick } from "@/lib/sendLead";
-import { formatCep, isValidCep } from "@/lib/cep";
+import { formatCep, isValidCep, lookupCep } from "@/lib/cep";
+import { isValidEmail } from "@/lib/email";
 import { cn } from "@/lib/utils";
 import beforeProjectAsset from "@/assets/olho-na-brasa-antes-1.jpg.asset.json";
 import afterProjectAsset from "@/assets/olho-na-brasa-depois-1.jpg.asset.json";
@@ -123,6 +124,7 @@ type ContactForm = {
   name: string;
   whatsapp: string;
   cep: string;
+  cidade: string;
   state: string;
   email: string;
   photoUrl: string;
@@ -384,6 +386,7 @@ function LandingPage() {
     name: "",
     whatsapp: "",
     cep: "",
+    cidade: "",
     state: "",
     email: "",
     photoUrl: "",
@@ -394,6 +397,7 @@ function LandingPage() {
     whatsapp: contactForm.whatsapp,
     email: contactForm.email,
     cep: contactForm.cep,
+    cidade: contactForm.cidade,
     estado: contactForm.state.toUpperCase(),
     estagio: overrides?.estagio ?? projectMomentLabel,
     tipoProjeto:
@@ -1663,6 +1667,9 @@ function ConsultiveModal({
   specialistMessage: string;
   measurementHelpMessage: string;
 }) {
+  const [validatingCep, setValidatingCep] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+
   if (!open) return null;
 
   void cityState;
@@ -1670,8 +1677,29 @@ function ConsultiveModal({
   void projectType;
   void measurementHelpMessage;
   const canContinueContact = Boolean(
-    form.name.trim() && form.whatsapp.trim() && isValidCep(form.cep) && form.state.trim(),
+    form.name.trim() &&
+      form.whatsapp.trim() &&
+      isValidEmail(form.email) &&
+      isValidCep(form.cep) &&
+      form.state.trim(),
   );
+
+  const handleContinueContact = async () => {
+    if (validatingCep) return;
+    setCepError(null);
+    setValidatingCep(true);
+    const result = await lookupCep(form.cep);
+    setValidatingCep(false);
+    if (!result.ok) {
+      setCepError(result.msg);
+      return;
+    }
+    if (result.data) {
+      onChangeField("cidade", result.data.cidade);
+      onChangeField("state", result.data.uf);
+    }
+    onContinueContact();
+  };
 
   const handleFinalAction = (url: string) => {
     void onFinalAction(url);
@@ -1797,7 +1825,13 @@ function ConsultiveModal({
                     onChange={(e) => onChangeField("email", e.target.value)}
                     className="field-base"
                     placeholder="seu@email.com"
+                    aria-invalid={form.email.length > 0 && !isValidEmail(form.email)}
                   />
+                  {form.email.length > 0 && !isValidEmail(form.email) ? (
+                    <span className="mt-1 block text-xs text-destructive">
+                      E-mail inválido. Confira o endereço.
+                    </span>
+                  ) : null}
                 </LabelField>
                 <div className="grid grid-cols-[1fr_100px] gap-3">
                   <LabelField label="CEP">
@@ -1813,6 +1847,8 @@ function ConsultiveModal({
                     />
                     {form.cep.length > 0 && !isValidCep(form.cep) ? (
                       <span className="mt-1 block text-xs text-destructive">Use o formato 00000-000</span>
+                    ) : cepError ? (
+                      <span className="mt-1 block text-xs text-destructive">{cepError}</span>
                     ) : null}
                   </LabelField>
                   <LabelField label="Estado">
@@ -1829,11 +1865,17 @@ function ConsultiveModal({
               <Button
                 type="button"
                 size="lg"
-                disabled={!canContinueContact}
+                disabled={!canContinueContact || validatingCep}
                 className="min-h-13 w-full rounded-xl bg-primary text-sm font-bold tracking-[0.08em] text-primary-foreground hover:bg-primary-strong disabled:bg-primary/35"
-                onClick={onContinueContact}
+                onClick={() => void handleContinueContact()}
               >
-                CONTINUAR <ArrowRight className="h-4 w-4" />
+                {validatingCep ? (
+                  "VALIDANDO CEP..."
+                ) : (
+                  <>
+                    CONTINUAR <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             </div>
           ) : null}
