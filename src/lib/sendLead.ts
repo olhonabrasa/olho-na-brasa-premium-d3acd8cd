@@ -15,6 +15,7 @@ export type LeadData = {
   whatsapp: string;
   email?: string;
   cep: string;
+  cidade?: string;
   estado?: string;
   estagio?: string;
   tipoProjeto?: string;
@@ -118,7 +119,7 @@ export async function sendLeadToDataCrazy(
           nome: lead.nome || null,
           whatsapp: lead.whatsapp || null,
           email: lead.email || null,
-          cidade: lead.cep || null,
+          cidade: lead.cidade || null,
           estado: lead.estado || null,
           estagio: lead.estagio || null,
           tipo_projeto: lead.tipoProjeto || null,
@@ -231,7 +232,7 @@ export async function upsertLead(
     nome: lead.nome || "",
     whatsapp: lead.whatsapp || "",
     email: lead.email || "",
-    cidade: lead.cep || "",
+    cidade: lead.cidade || "",
     estado: lead.estado || "",
     estagio: lead.estagio || "",
     tipo_projeto: lead.tipoProjeto || "",
