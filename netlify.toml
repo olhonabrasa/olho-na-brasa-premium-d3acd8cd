@@ -1,0 +1,9 @@
+[build]
+  command = "bun run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/__l5e/*"
+  to = "https://olho-na-brasa-premium.lovable.app/__l5e/:splat"
+  status = 200
+  force = true
