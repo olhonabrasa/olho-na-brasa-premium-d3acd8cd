@@ -58,8 +58,7 @@ const formatDate = (iso: string | null) => {
 };
 
 function AdminPage() {
-  const [checking, setChecking] = useState(true);
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
@@ -71,21 +70,12 @@ function AdminPage() {
   const [filtro, setFiltro] = useState<Filtro>("todos");
 
   useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setAuthed(Boolean(data.session));
-      setChecking(false);
-    });
+    supabase.auth.getSession().then(({ data }) => setAuthed(Boolean(data.session)));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthed(Boolean(session));
-      setChecking(false);
       if (!session) setLeads([]);
     });
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   const fetchLeads = useCallback(async () => {
