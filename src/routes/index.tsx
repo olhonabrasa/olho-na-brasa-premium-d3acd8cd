@@ -567,7 +567,7 @@ function LandingPage() {
         </main>
 
         <Footer />
-        <FloatingWhatsappButton onOpenChat={openChatSimulado} />
+        {/* <FloatingWhatsappButton onOpenChat={openChatSimulado} /> */}
       </div>
 
       <ConsultiveModal
