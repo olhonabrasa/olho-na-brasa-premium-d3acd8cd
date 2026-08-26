@@ -149,7 +149,7 @@ function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (checking) {
+  if (authed === null) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         Carregando...
