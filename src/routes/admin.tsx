@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Painel de Leads | Olho na Brasa" },
@@ -57,8 +58,7 @@ const formatDate = (iso: string | null) => {
 };
 
 function AdminPage() {
-  const [checking, setChecking] = useState(true);
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
@@ -70,21 +70,12 @@ function AdminPage() {
   const [filtro, setFiltro] = useState<Filtro>("todos");
 
   useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setAuthed(Boolean(data.session));
-      setChecking(false);
-    });
+    supabase.auth.getSession().then(({ data }) => setAuthed(Boolean(data.session)));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthed(Boolean(session));
-      setChecking(false);
       if (!session) setLeads([]);
     });
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   const fetchLeads = useCallback(async () => {
@@ -158,7 +149,7 @@ function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (checking) {
+  if (authed === null) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         Carregando...
