@@ -39,8 +39,6 @@ import processPolishAsset from "@/assets/processo-polimento.png.asset.json";
 import processAssemblyAsset from "@/assets/processo-montagem.jpg.asset.json";
 import processInspectionAsset from "@/assets/processo-inspecao-qualidade.jpg.asset.json";
 import processPackagingAsset from "@/assets/processo-embalagem-segura.png.asset.json";
-import videoHeadlineAsset from "@/assets/video-headline.mp4.asset.json";
-import fabricaVideo from "@/assets/fabrica.mp4.asset.json";
 import kitCompletoAsset from "@/assets/kit-completo.png.asset.json";
 import suporteSuspensoAsset from "@/assets/suporte-suspenso.png.asset.json";
 
