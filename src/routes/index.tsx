@@ -1050,7 +1050,7 @@ function ProcessSection({ onOpenModal }: { onOpenModal: () => void }) {
         <div className="factory-media mt-6 flex w-full justify-center">
           <div
             className="factory-video glass-panel relative overflow-hidden rounded-2xl border border-border bg-black"
-            style={{ aspectRatio: "9 / 16", height: "58svh", maxHeight: "58svh", maxWidth: "78vw" }}
+            style={{ aspectRatio: "16 / 9", height: "58svh", maxHeight: "58svh", maxWidth: "78vw" }}
           >
             <AutoPauseVideo
               className="h-full w-full object-cover"
