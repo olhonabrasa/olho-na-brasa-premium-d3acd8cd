@@ -702,7 +702,7 @@ function HeroVideo({ videoSrc }: { videoSrc: string }) {
         loop
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
         disablePictureInPicture
         controlsList="nodownload noplaybackrate nofullscreen"
       />
