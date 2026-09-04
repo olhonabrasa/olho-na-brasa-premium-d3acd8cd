@@ -646,7 +646,7 @@ function StickyHeader({ visible }: { visible: boolean }) {
 }
 
 /* ===================== HERO VIDEO ===================== */
-function HeroVideo({ videoSrc }: { videoSrc: string }) {
+function HeroVideo({ videoSrc, poster }: { videoSrc: string; poster?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [showSoundPrompt, setShowSoundPrompt] = useState(true);
@@ -698,6 +698,7 @@ function HeroVideo({ videoSrc }: { videoSrc: string }) {
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
         src={videoSrc}
+        poster={poster}
         autoPlay
         loop
         muted
@@ -748,7 +749,7 @@ function HeroVideo({ videoSrc }: { videoSrc: string }) {
 function HeroSection({ onOpenModal: _onOpenModal }: { onOpenModal: () => void }) {
   return (
     <section id="top" className="hero-section relative overflow-hidden bg-background">
-      <HeroVideo videoSrc={videoHeadlineAsset.url} />
+      <HeroVideo videoSrc="/hero-loop.mp4" poster="/poster-headline.jpg" />
       <div className="hero-content px-4 pb-6 pt-5">
         <h1
           className="hero-headline font-display text-foreground"
@@ -1055,7 +1056,7 @@ function ProcessSection({ onOpenModal }: { onOpenModal: () => void }) {
           >
             <AutoPauseVideo
               className="h-full w-full object-cover"
-              src={fabricaVideo.url}
+              src="/fabrica.mp4"
               poster={processCutAsset.url}
             />
           </div>
