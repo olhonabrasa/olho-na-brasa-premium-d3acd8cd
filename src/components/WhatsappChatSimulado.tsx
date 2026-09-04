@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { formatCep, isValidCep, lookupCep } from "@/lib/cep";
 import { isValidEmail } from "@/lib/email";
 import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick, markWhatsappClicked } from "@/lib/sendLead";
-import atendenteAsset from "@/assets/atendente.png.asset.json";
+import atendenteAsset from "@/assets/atendente.webp.asset.json";
 
 type Msg =
   | { id: string; from: "bot" | "user"; kind: "text"; text: string; ts: string }
