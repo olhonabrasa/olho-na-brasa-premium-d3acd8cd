@@ -5,5 +5,5 @@
 [[redirects]]
   from = "/__l5e/*"
   to = "https://olho-na-brasa-premium.lovable.app/__l5e/:splat"
-  status = 200
+  status = 301
   force = true
