@@ -11,11 +11,11 @@ export const Route = createFileRoute("/painel-leads-9f3k7x2pq8m")({
 type Lead = {
   id: string;
   created_at: string;
-  nome: string;
-  whatsapp: string;
+  nome: string | null;
+  whatsapp: string | null;
   email: string | null;
-  cidade: string;
-  estado: string;
+  cidade: string | null;
+  estado: string | null;
   estagio: string | null;
   tipo_projeto: string | null;
   foto_url: string | null;
@@ -122,7 +122,7 @@ function PainelLeads() {
     if (filter === "clicked" && !l.clicked_whatsapp) return false;
     if (search) {
       const q = search.toLowerCase();
-      const hay = `${l.nome} ${l.whatsapp} ${l.cidade} ${l.estado} ${l.email ?? ""}`.toLowerCase();
+      const hay = [l.nome, l.whatsapp, l.cidade, l.estado, l.email].filter(Boolean).join(" ").toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -217,13 +217,17 @@ function PainelLeads() {
                     <td className="py-2 pr-3 text-xs text-white/70">
                       {new Date(l.created_at).toLocaleString("pt-BR")}
                     </td>
-                    <td className="py-2 pr-3">{l.nome}</td>
+                    <td className="py-2 pr-3">{l.nome || <span className="text-white/40">Incompleto</span>}</td>
                     <td className="py-2 pr-3">
-                      <a href={`https://wa.me/55${l.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">
-                        {l.whatsapp}
-                      </a>
+                      {l.whatsapp ? (
+                        <a href={waLink(l.whatsapp)} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">
+                          {l.whatsapp}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
                     </td>
-                    <td className="py-2 pr-3">{l.cidade}/{l.estado}</td>
+                    <td className="py-2 pr-3">{[l.cidade, l.estado].filter(Boolean).join("/") || "—"}</td>
                     <td className="py-2 pr-3">
                       <span className={`rounded px-2 py-0.5 text-xs ${l.origem_captura === "chat_whatsapp" ? "bg-emerald-500/20 text-emerald-300" : "bg-blue-500/20 text-blue-300"}`}>
                         {l.origem_captura}
@@ -278,6 +282,12 @@ function PainelLeads() {
       )}
     </div>
   );
+}
+
+/** Link do WhatsApp sem duplicar o 55 (aceita "(47) 99999-9999" e "5547999999999"). */
+function waLink(whatsapp: string) {
+  const d = whatsapp.replace(/\D/g, "");
+  return `https://wa.me/${d.startsWith("55") && d.length >= 12 ? d : "55" + d}`;
 }
 
 function StatCard({ label, value }: { label: string; value: number }) {
