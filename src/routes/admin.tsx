@@ -43,7 +43,10 @@ type Lead = {
 
 type Filtro = "todos" | "formulario" | "chat_whatsapp" | "clicou";
 
-const onlyDigits = (v: string) => v.replace(/\D/g, "");
+const waLink = (v: string) => {
+  const d = v.replace(/\D/g, "");
+  return `https://wa.me/${d.startsWith("55") && d.length >= 12 ? d : "55" + d}`;
+};
 
 const formatDate = (iso: string | null) => {
   if (!iso) return "—";
@@ -290,7 +293,7 @@ function AdminPage() {
                   <td className="whitespace-nowrap px-3 py-3">
                     {lead.whatsapp ? (
                       <a
-                        href={`https://wa.me/${onlyDigits(lead.whatsapp)}`}
+                        href={waLink(lead.whatsapp)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary underline"
