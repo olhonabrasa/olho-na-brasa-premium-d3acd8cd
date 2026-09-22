@@ -27,7 +27,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { WhatsappChatSimulado } from "@/components/WhatsappChatSimulado";
-import { sendLeadToDataCrazy, markWhatsappClick, markWhatsappClicked, upsertLead, trackWhatsappClick } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick, newLeadId } from "@/lib/sendLead";
 import { formatCep, isValidCep, lookupCep } from "@/lib/cep";
 import { isValidEmail } from "@/lib/email";
 import { cn } from "@/lib/utils";
@@ -501,7 +501,7 @@ function LandingPage() {
     setModalStage("stage");
     setProjectType(null);
     setProjectMomentLabel("");
-    setLeadId(null);
+    setLeadId(newLeadId()); // id fixo desde a abertura: todas as etapas atualizam a MESMA linha
   };
 
   const closeConsultiveModal = () => {
@@ -584,29 +584,22 @@ function LandingPage() {
         onProjectTypeSelect={(type) => {
           setProjectType(type);
           setModalStage("photo");
-          void upsertLead(buildLeadData({ tipoProjeto: type }), "formulario", null).then((id) => {
-            if (id) setLeadId(id);
-          });
+          void upsertLead(buildLeadData({ tipoProjeto: type }), "formulario", leadId);
         }}
         onContinuePhoto={() => {
           setModalStage("contact");
-          void upsertLead(buildLeadData(), "formulario", leadId).then((id) => {
-            if (id && !leadId) setLeadId(id);
-          });
+          void upsertLead(buildLeadData(), "formulario", leadId);
         }}
         onContinueContact={() => {
           setModalStage("path");
-          void upsertLead(buildLeadData(), "formulario", leadId).then((id) => {
-            if (id && !leadId) setLeadId(id);
-          });
+          void upsertLead(buildLeadData(), "formulario", leadId);
         }}
-        onFinalAction={async (url) => {
-          const id = await upsertLead(buildLeadData(), "formulario", leadId, { clickedWhatsapp: true });
-          if (id && !leadId) setLeadId(id);
-          const dcLeadId = await sendLeadToDataCrazy(buildLeadData(), "formulario").catch(() => null);
+        onFinalAction={(url) => {
+          // Abrir o WhatsApp PRIMEIRO, ainda dentro do clique — senão o Safari/iOS bloqueia o pop-up.
+          window.open(url, "_blank", "noopener");
           trackWhatsappClick("cta_falar_especialista", url);
-          window.open(url, "_blank");
-          if (url.includes("wa.me") || url.includes("whatsapp")) void markWhatsappClicked(dcLeadId);
+          void upsertLead(buildLeadData(), "formulario", leadId, { clickedWhatsapp: true });
+          void sendLeadToDataCrazy(buildLeadData(), "formulario").catch(() => null);
         }}
         onChangeField={(field, value) => setContactForm((current) => ({ ...current, [field]: value }))}
         specialistMessage={specialistMessage}
