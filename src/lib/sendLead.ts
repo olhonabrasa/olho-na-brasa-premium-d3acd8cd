@@ -43,6 +43,18 @@ function newEventId() {
   return "lead-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
 }
 
+/** UUID v4 gerado no navegador — o id do lead nasce no cliente, sem precisar ler de volta do banco. */
+export function newLeadId(): string {
+  const c: Crypto = globalThis.crypto;
+  if (typeof c.randomUUID === "function") return c.randomUUID();
+  const b = new Uint8Array(16);
+  c.getRandomValues(b);
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 const TRACK_KEYS = [
   "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
   "gclid", "gbraid", "wbraid", "fbclid",
@@ -109,37 +121,8 @@ export async function sendLeadToDataCrazy(
     console.error("DataCrazy webhook error:", err);
   }
 
-  let leadId: string | null = null;
-  if (typeof window !== "undefined") {
-    try {
-      const params2 = new URLSearchParams(window.location.search);
-      const { data: inserted, error: insErr } = await supabase
-        .from("leads")
-        .insert({
-          nome: lead.nome || null,
-          whatsapp: lead.whatsapp || null,
-          email: lead.email || null,
-          cidade: lead.cidade || null,
-          estado: lead.estado || null,
-          estagio: lead.estagio || null,
-          tipo_projeto: lead.tipoProjeto || null,
-          foto_url: lead.fotoUrl || null,
-          origem_captura: origem,
-          utm_source: params2.get("utm_source") || "direct",
-          utm_medium: params2.get("utm_medium") || null,
-          utm_campaign: params2.get("utm_campaign") || null,
-          utm_content: params2.get("utm_content") || null,
-          page_url: window.location.href,
-          user_agent: navigator.userAgent,
-        })
-        .select("id")
-        .single();
-      if (insErr) console.warn("[leads] insert falhou:", insErr.message);
-      else leadId = (inserted as { id: string } | null)?.id ?? null;
-    } catch (e) {
-      console.warn("[leads] insert exception:", e);
-    }
-  }
+  // O lead já é salvo no Supabase por upsertLead() (RPC save_lead).
+  // Não inserir de novo aqui para não duplicar linhas no painel.
 
   if (!leadFired && typeof window !== "undefined" && typeof fbq !== "undefined") {
     leadFired = true;
@@ -188,20 +171,11 @@ export async function sendLeadToDataCrazy(
     });
   }
 
-  return leadId;
+  return null;
 }
 
 export async function markWhatsappClick(leadId: string | null) {
-  if (!leadId) return;
-  try {
-    const { error } = await supabase
-      .from("leads")
-      .update({ clicked_whatsapp: true, clicked_whatsapp_at: new Date().toISOString() })
-      .eq("id", leadId);
-    if (error) console.error("markWhatsappClick error:", error);
-  } catch (err) {
-    console.error("markWhatsappClick exception:", err);
-  }
+  await markWhatsappClicked(leadId);
 }
 
 function getUtmParams() {
@@ -244,45 +218,27 @@ export async function upsertLead(
     patch.clicked_whatsapp_at = new Date().toISOString();
   }
 
-  console.log("[saveLead] Iniciando insert/update no Supabase...", {
-    nome: lead.nome,
-    whatsapp: lead.whatsapp,
-    existingId,
-    clickedWhatsapp: clicked,
-  });
+  const id = existingId ?? newLeadId();
+  const data: Record<string, unknown> = {
+    ...patch,
+    user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    page_url: typeof window !== "undefined" ? window.location.href : "",
+    ...getUtmParams(),
+  };
 
   try {
-    if (existingId) {
-      const { error } = await supabase.from("leads").update(patch).eq("id", existingId);
-      if (error) {
-        console.error("[saveLead] ERRO no update:", error.message, error.details, error.hint);
-        return existingId;
-      }
-      console.log("[saveLead] UPDATE OK, id:", existingId);
+    // RPC security definer: grava/atualiza sem precisar de SELECT para o anon
+    // (o insert().select() antigo exigia SELECT e gerava o 401/403).
+    const { error } = await supabase.rpc("save_lead", { p_id: id, p_data: data });
+    if (error) {
+      console.error("[saveLead] ERRO:", error.code, error.message, error.details, error.hint);
       return existingId;
     }
-    const insertPayload = {
-      ...patch,
-      clicked_whatsapp: clicked,
-      clicked_whatsapp_at: clicked ? new Date().toISOString() : null,
-      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-      page_url: typeof window !== "undefined" ? window.location.href : "",
-      ...getUtmParams(),
-    };
-    const { data, error } = await supabase
-      .from("leads")
-      .insert(insertPayload)
-      .select("id")
-      .single();
-    if (error) {
-      console.error("[saveLead] ERRO no insert:", error.message, error.details, error.hint);
-      return null;
-    }
-    console.log("[saveLead] INSERT OK, id:", (data as { id: string } | null)?.id);
-    return (data as { id: string } | null)?.id ?? null;
+    console.log("[saveLead] OK, id:", id);
+    return id;
   } catch (err) {
     console.error("[saveLead] ERRO inesperado:", err);
-    return null;
+    return existingId;
   }
 }
 
@@ -298,12 +254,9 @@ export function trackWhatsappClick(local: string, url?: string) {
 
 export async function markWhatsappClicked(leadId: string | null) {
   if (!leadId) return;
-  try {
-    await supabase
-      .from("leads")
-      .update({ clicked_whatsapp: true, clicked_whatsapp_at: new Date().toISOString() })
-      .eq("id", leadId);
-  } catch (e) {
-    console.warn("[leads] update clique falhou:", e);
-  }
+  const { error } = await supabase.rpc("save_lead", {
+    p_id: leadId,
+    p_data: { clicked_whatsapp: true, clicked_whatsapp_at: new Date().toISOString() },
+  });
+  if (error) console.warn("[leads] update clique falhou:", error.message);
 }
