@@ -3,7 +3,7 @@ import { X, Send, Paperclip, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatCep, isValidCep, lookupCep } from "@/lib/cep";
 import { isValidEmail } from "@/lib/email";
-import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick, markWhatsappClicked } from "@/lib/sendLead";
+import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick, newLeadId } from "@/lib/sendLead";
 import atendenteAsset from "@/assets/atendente.webp.asset.json";
 
 type Msg =
@@ -122,6 +122,8 @@ export function WhatsappChatSimulado({
     }
     pushUser(`${nome}, ${cep}/${uf}`);
     setStep("photo");
+    const id = leadId ?? newLeadId();
+    setLeadId(id);
     void upsertLead(
       {
         nome,
@@ -133,10 +135,8 @@ export function WhatsappChatSimulado({
         tipoProjeto: "Não informado (via chat WhatsApp)",
       },
       "chat_whatsapp",
-      null,
-    ).then((id) => {
-      if (id) setLeadId(id);
-    });
+      id,
+    );
     const first = nome.trim().split(" ")[0];
     await pushBot(`Perfeito, ${first}! 👍`, 900);
     await pushBot("Perfeito! Se quiser, envie uma foto da sua churrasqueira ou do projeto — ajuda no orçamento, mas é opcional.", 1200);
@@ -176,9 +176,7 @@ export function WhatsappChatSimulado({
         },
         "chat_whatsapp",
         leadId,
-      ).then((id) => {
-        if (id && !leadId) setLeadId(id);
-      });
+      );
       await pushBot("Recebi sua foto! 📸 Show!", 900);
       await pushBot(
         "Vou te transferir agora para um dos nossos especialistas finalizar seu orçamento. Só clicar abaixo 👇",
@@ -192,9 +190,15 @@ export function WhatsappChatSimulado({
     }
   };
 
-  const finalize = async () => {
+  const finalize = () => {
     if (sending) return;
-    setSending(true);
+    const url = `https://wa.me/554740420956?text=${encodeURIComponent(
+      `Olá! Quero montar meu Kit Premium. Vim pela landing page.`,
+    )}`;
+    // Abrir o WhatsApp PRIMEIRO, ainda dentro do clique (evita bloqueio de pop-up no iOS).
+    window.open(url, "_blank", "noopener");
+    trackWhatsappClick("chat_simulado_especialista", url);
+    setStep("done");
     const leadData = {
       nome,
       whatsapp,
@@ -206,18 +210,8 @@ export function WhatsappChatSimulado({
       tipoProjeto: "Não informado (via chat WhatsApp)",
       fotoUrl,
     };
-    const savedId = await upsertLead(leadData, "chat_whatsapp", leadId, { clickedWhatsapp: true });
-    if (savedId && !leadId) setLeadId(savedId);
-    const dcLeadId = await sendLeadToDataCrazy(leadData, "chat_whatsapp").catch(() => null);
-    const url = `https://wa.me/554740420956?text=${encodeURIComponent(
-      `Olá! Quero montar meu Kit Premium. Vim pela landing page.`,
-    )}`;
-
-    setStep("done");
-    trackWhatsappClick("chat_simulado_especialista", url);
-    window.open(url, "_blank");
-    void markWhatsappClicked(dcLeadId);
-    setSending(false);
+    void upsertLead(leadData, "chat_whatsapp", leadId, { clickedWhatsapp: true });
+    void sendLeadToDataCrazy(leadData, "chat_whatsapp").catch(() => null);
   };
 
   if (!open) return null;
