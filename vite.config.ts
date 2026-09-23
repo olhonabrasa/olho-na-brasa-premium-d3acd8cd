@@ -6,17 +6,12 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Hospedagem: Cloudflare Pages como site estático (build `bun run build`, saída `.output/public`).
+// O preset cloudflare-module é necessário só para o prerender funcionar.
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
-    prerender: { enabled: true, crawlLinks: false },   // ← nova
+    prerender: { enabled: true, crawlLinks: false },
   },
-  nitro: { preset: "cloudflare-module" },               // ← era "netlify"
-});
-
-export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
-  },
-  nitro: { preset: "netlify" },
+  nitro: { preset: "cloudflare-module" },
 });
