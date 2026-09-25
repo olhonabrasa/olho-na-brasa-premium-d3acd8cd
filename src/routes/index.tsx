@@ -31,6 +31,9 @@ import { sendLeadToDataCrazy, upsertLead, trackWhatsappClick, newLeadId } from "
 import { formatCep, isValidCep, lookupCep } from "@/lib/cep";
 import { isValidEmail } from "@/lib/email";
 import { cn } from "@/lib/utils";
+import { KitConfigurator } from "@/components/checkout/KitConfigurator";
+import { CheckoutPanel, type CheckoutRequest } from "@/components/checkout/CheckoutPanel";
+import { track } from "@/lib/tracking";
 import beforeProjectAsset from "@/assets/olho-na-brasa-antes-1.jpg.asset.json";
 import afterProjectAsset from "@/assets/olho-na-brasa-depois-1.jpg.asset.json";
 import processCutAsset from "@/assets/processo-corte-inox.jpg.asset.json";
@@ -135,6 +138,7 @@ type RevealProps = {
   children: ReactNode;
   style?: React.CSSProperties;
   glow?: boolean;
+  track?: string;
 };
 
 type SectionHeadingProps = {
@@ -368,6 +372,7 @@ const clientVideos: ClientVideo[] = [
 
 function LandingPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [checkout, setCheckout] = useState<CheckoutRequest | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [modalStage, setModalStage] = useState<ModalStage>("stage");
   const [projectType, setProjectType] = useState<ProjectType>(null);
@@ -481,6 +486,22 @@ function LandingPage() {
     [],
   );
 
+  // Modo mapa de cliques (iframe do painel): trava alturas em vh e informa a altura da página.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("heatmap") || window.parent === window) return;
+    document.documentElement.classList.add("heatmap-mode");
+    const width = Number(params.get("w")) || window.innerWidth;
+    const post = () =>
+      window.parent.postMessage({ type: "onb-heatmap-height", height: document.documentElement.scrollHeight, width }, window.location.origin);
+    const timers = [300, 1200, 3000, 6000].map((ms) => window.setTimeout(post, ms));
+    window.addEventListener("load", post);
+    return () => {
+      timers.forEach(clearTimeout);
+      window.removeEventListener("load", post);
+    };
+  }, []);
+
   useEffect(() => {
     const onScroll = () => setHeaderVisible(window.scrollY > 300);
     onScroll();
@@ -546,6 +567,8 @@ function LandingPage() {
           <Divider />
           <BeforeAfterSection onOpenModal={openConsultiveModal} onOpenLightbox={(img) => setLightboxImage(img)} />
           <Divider />
+          <ConfiguratorSection onCheckout={(input, quote, store) => setCheckout({ input, quote, store })} />
+          <Divider />
           <ProcessSection onOpenModal={openConsultiveModal} />
           <Divider />
           <GallerySection
@@ -607,10 +630,68 @@ function LandingPage() {
       />
 
 
+      <CheckoutPanel request={checkout} onClose={() => setCheckout(null)} />
+      <PriceDock hidden={modalOpen || chatOpen || !!checkout || !!lightboxImage} />
+
       <WhatsappChatSimulado open={chatOpen} onClose={() => setChatOpen(false)} onSwitchToForm={openConsultiveModal} />
 
       {lightboxImage ? <Lightbox image={lightboxImage} onClose={() => setLightboxImage(null)} /> : null}
     </>
+  );
+}
+
+/* ===================== CONFIGURADOR ===================== */
+function ConfiguratorSection({ onCheckout }: { onCheckout: React.ComponentProps<typeof KitConfigurator>["onCheckout"] }) {
+  return (
+    <RevealSection id="configurador" track="configurador" className="section-dark section-glow">
+      <div className="mx-auto mb-8 max-w-(--container-max) px-5 md:mb-10">
+        <h2
+          className="max-w-3xl font-display font-semibold leading-[1.05] text-balance text-foreground"
+          style={{ fontSize: "clamp(1.6rem, 5vw, 2.75rem)", letterSpacing: "-0.02em" }}
+        >
+          Sua medida, seu preço. Na hora.
+        </h2>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-secondary-foreground md:text-base">
+          Digite a largura e o comprimento da sua churrasqueira. O kit é fabricado para caber nela, e você já paga aqui.
+        </p>
+      </div>
+      <KitConfigurator onCheckout={onCheckout} />
+    </RevealSection>
+  );
+}
+
+/** Atalho fixo no celular até o configurador; some quando ele está na tela. */
+function PriceDock({ hidden }: { hidden: boolean }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const hero = document.getElementById("top");
+    const conf = document.getElementById("configurador");
+    if (!hero || !conf) return;
+    let pastHero = false;
+    let onConf = false;
+    const update = () => setShow(pastHero && !onConf);
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.target === hero) pastHero = !e.isIntersecting;
+        if (e.target === conf) onConf = e.isIntersecting;
+      }
+      update();
+    });
+    io.observe(hero);
+    io.observe(conf);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div className="price-dock fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 md:hidden" data-hidden={hidden || !show} style={{ background: "linear-gradient(to top, rgb(10 10 10 / 0.96) 55%, transparent)" }}>
+      <a
+        href="#configurador"
+        data-track="dock_ver_preco"
+        onClick={() => track("dock_click")}
+        className="press cta-fire flex min-h-13 items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[15px] font-bold text-primary-foreground"
+      >
+        Ver o preço para a minha medida <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </a>
+    </div>
   );
 }
 
@@ -739,7 +820,7 @@ function HeroVideo({ videoSrc, poster }: { videoSrc: string; poster?: string }) 
 /* ===================== HERO ===================== */
 function HeroSection({ onOpenModal: _onOpenModal }: { onOpenModal: () => void }) {
   return (
-    <section id="top" className="hero-section relative overflow-hidden bg-background">
+    <section id="top" data-track-section="hero" className="hero-section relative overflow-hidden bg-background">
       <HeroVideo videoSrc="/hero-loop.mp4" poster="/poster-headline.jpg" />
       <div className="hero-content px-4 pb-6 pt-5">
         <h1
@@ -771,6 +852,14 @@ function HeroSection({ onOpenModal: _onOpenModal }: { onOpenModal: () => void })
         <div className="mt-4 badges-marquee">
           <BenefitsMarquee />
         </div>
+
+        <a
+          href="#configurador"
+          data-track="hero_ver_preco"
+          className="press cta-fire mt-5 inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-[15px] font-bold text-primary-foreground sm:w-auto"
+        >
+          Ver o preço para a minha medida <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </a>
       </div>
     </section>
   );
@@ -895,7 +984,7 @@ function BeforeAfterSection({
 }) {
   const [active, setActive] = useState(0);
   return (
-    <RevealSection className="section-alt section-glow">
+    <RevealSection track="antes_depois" className="section-alt section-glow">
       <SectionHeading
         eyebrow="TRANSFORMAÇÃO REAL"
         title="Veja o que um Kit Olho na Brasa faz pela sua churrasqueira."
@@ -995,7 +1084,7 @@ function ProcessSection({ onOpenModal }: { onOpenModal: () => void }) {
     { Icon: Award, t: "15 anos de garantia", d: "O maior compromisso de durabilidade do mercado." },
   ];
   return (
-    <RevealSection className="factory-section section-dark section-glow flex flex-col justify-center !py-8 md:!py-14">
+    <RevealSection track="fabrica" className="factory-section section-dark section-glow flex flex-col justify-center !py-8 md:!py-14">
       <div className="factory-inner mx-auto w-full max-w-(--container-max) px-5">
         <div className="factory-text hidden lg:block">
           <p className="section-label">POR DENTRO DA FÁBRICA</p>
@@ -1101,7 +1190,7 @@ function GallerySection({
 }) {
   const galleryRef = useRef<HTMLDivElement>(null);
   return (
-    <RevealSection className="section-alt section-glow">
+    <RevealSection track="galeria" className="section-alt section-glow">
       <SectionHeading eyebrow="PROJETOS ENTREGUES" title="Galeria de churrasqueiras transformadas." centered />
 
       <div className="relative mx-auto max-w-(--container-max)">
@@ -1159,7 +1248,7 @@ function GallerySection({
 function ClientVideosSection({ onOpenModal }: { onOpenModal: () => void }) {
   const clientsRef = useRef<HTMLDivElement>(null);
   return (
-    <RevealSection className="section-alt section-glow">
+    <RevealSection track="videos_clientes" className="section-alt section-glow">
       <SectionHeading eyebrow="CLIENTES REAIS" title="Veja a reação de quem recebeu o Kit Olho na Brasa." centered />
       <div className="relative mx-auto max-w-(--container-max)">
         <div
@@ -1336,7 +1425,7 @@ function DifferentialsSection() {
     { t: "Compra com Segurança", d: "Suporte pós-venda 100%", Icon: Lock, wide: true },
   ];
   return (
-    <RevealSection className="section-dark">
+    <RevealSection track="diferenciais" className="section-dark">
       <div className="trust-grid mx-auto grid max-w-(--container-max) grid-cols-2 gap-2.5 px-4 md:grid-cols-5">
         {items.map(({ t, d, Icon, wide }) => (
           <div
@@ -1429,7 +1518,7 @@ function GoogleReviewsSection({ onOpenModal }: { onOpenModal: () => void }) {
   const mapsUrl =
     "https://www.google.com/maps/place/Olho+na+Brasa/@-27.1016701,-48.6187495,738m/data=!3m1!1e3!4m8!3m7!1s0x94d8b100c4230f17:0x899b6cbbbfaceb99!8m2!3d-27.1016701!4d-48.6161746!9m1!1b1!16s%2Fg%2F11rzr1kln5?entry=ttu&g_ep=EgoyMDI2MDYyNC4wIKXMDSoASAFQAw%3D%3D";
   return (
-    <RevealSection className="section-alt section-glow">
+    <RevealSection track="avaliacoes_google" className="section-alt section-glow">
       <SectionHeading eyebrow="AVALIAÇÕES NO GOOGLE" title="O que nossos clientes dizem no Google" centered />
 
       <div className="mx-auto mb-10 flex max-w-md flex-col items-center gap-3 rounded-2xl border border-border bg-card/60 px-6 py-6 text-center shadow-soft">
@@ -1511,7 +1600,7 @@ function GoogleReviewsSection({ onOpenModal }: { onOpenModal: () => void }) {
 
 function FaqSection({ onOpenModal }: { onOpenModal: () => void }) {
   return (
-    <RevealSection className="faq-section section-dark">
+    <RevealSection track="faq" className="faq-section section-dark">
       <SectionHeading title="Dúvidas frequentes" centered />
       <div className="mx-auto max-w-4xl px-5">
         <Accordion type="single" collapsible className="rounded-2xl border border-border bg-card px-5 py-2 shadow-soft">
@@ -1537,7 +1626,7 @@ function FaqSection({ onOpenModal }: { onOpenModal: () => void }) {
 
 function FinalCtaSection({ onOpenModal }: { onOpenModal: () => void }) {
   return (
-    <RevealSection className="final-cta-section section-cta">
+    <RevealSection track="cta_final" className="final-cta-section section-cta">
       <section className="mx-auto max-w-4xl px-5 text-center">
         <div className="relative overflow-hidden rounded-3xl border border-border-strong bg-card px-6 py-10 shadow-fire md:px-10 md:py-14">
           <div
@@ -1565,7 +1654,7 @@ function FinalCtaSection({ onOpenModal }: { onOpenModal: () => void }) {
 
 function Footer() {
   return (
-    <footer className="bg-footer pb-28 pt-12 text-center md:pb-12">
+    <footer data-track-section="rodape" className="bg-footer pb-28 pt-12 text-center md:pb-12">
       <div className="footer-content mx-auto max-w-(--container-max) px-5">
         <img src={logoOlhoNaBrasa.url} alt="Olho na Brasa" className="mx-auto h-12 w-auto" />
         <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-secondary-foreground">
@@ -1579,6 +1668,12 @@ function Footer() {
         <div className="mt-8 space-y-1 text-xs text-muted-foreground">
           <p>OLHO NA BRASA LTDA — CNPJ: 43.062.681/0001-25</p>
           <p>© 2026 Olho na Brasa. Todos os direitos reservados.</p>
+          <p className="mx-auto max-w-md pt-2 leading-5">
+            Registramos a navegação nesta página (rolagem e cliques, sem o que você digita) para melhorar o atendimento.{" "}
+            <a href="https://www.olhonabrasa.com.br/politica-privacidade" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+              Política de privacidade
+            </a>
+          </p>
         </div>
       </div>
     </footer>
@@ -1953,7 +2048,7 @@ function Lightbox({
   );
 }
 
-function RevealSection({ id, className, as = "section", children, style }: RevealProps) {
+function RevealSection({ id, className, as = "section", children, style, track: trackName }: RevealProps) {
   const generatedId = useId().replace(/:/g, "");
   const [visible, setVisible] = useState(false);
   const Component = as;
@@ -1978,6 +2073,7 @@ function RevealSection({ id, className, as = "section", children, style }: Revea
   return (
     <Component
       id={elementId}
+      data-track-section={trackName}
       style={style}
       className={cn("scroll-mt-20 px-0 py-14 md:py-20", visible ? "fade-visible" : "fade-hidden", className)}
     >
