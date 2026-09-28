@@ -17,6 +17,8 @@ import {
   type QuoteInput,
 } from "@/lib/pricing";
 import { loadStore, MP_PUBLIC_KEY, type StoreData } from "@/lib/store";
+import { compositionFromPieces, kitComposition } from "@/lib/kitComposition";
+import { KitViewer3D } from "./KitViewer3D";
 import { track } from "@/lib/tracking";
 import guiaMedidas from "@/assets/guia-medidas.png.asset.json";
 import kitCompleto from "@/assets/kit-completo.webp.asset.json";
@@ -47,6 +49,17 @@ export function KitConfigurator({ onCheckout }: Props) {
   const changeTimer = useRef<number | undefined>(undefined);
   const priceRef = useRef<HTMLDivElement>(null);
   const [priceVisible, setPriceVisible] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [inConfigurator, setInConfigurator] = useState(false);
+
+  // celular: o preço fica numa barra fixa enquanto o configurador está na tela
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setInConfigurator(e.isIntersecting), { threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     const el = priceRef.current;
@@ -111,6 +124,13 @@ export function KitConfigurator({ onCheckout }: Props) {
 
   const customItems = store?.catalog.filter((c) => c.in_kit) ?? [];
 
+  // O 3D só desenha: a composição sai da faixa cobrada (kit) ou das peças escolhidas.
+  const composition = useMemo(() => {
+    if (mode === "kit") return quote?.ok ? kitComposition(quote.tier_width_cm, quote.tier_depth_cm) : null;
+    return compositionFromPieces(pieceList, width, depth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, quote, width, depth, JSON.stringify(pieceList)]);
+
   // registra a configuração quando o cliente para de mexer (não a cada pixel do slider)
   useEffect(() => {
     if (store === undefined) return;
@@ -148,14 +168,21 @@ export function KitConfigurator({ onCheckout }: Props) {
   );
 
   return (
-    <div className="configurator mx-auto grid max-w-(--container-max) gap-8 px-4 md:px-5 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+    <div ref={rootRef} className="configurator mx-auto grid max-w-(--container-max) gap-8 px-4 md:px-5 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
       {/* ------- PLANTA ------- */}
       <div className="lg:sticky lg:top-24 lg:self-start">
-        <Blueprint
-          width={width}
-          depth={depth}
-          tierW={quote?.ok && mode === "kit" ? quote.tier_width_cm : null}
-          tierD={quote?.ok && mode === "kit" ? quote.tier_depth_cm : null}
+        <KitViewer3D
+          composition={composition}
+          widthCm={width}
+          depthCm={depth}
+          fallback={
+            <Blueprint
+              width={width}
+              depth={depth}
+              tierW={quote?.ok && mode === "kit" ? quote.tier_width_cm : null}
+              tierD={quote?.ok && mode === "kit" ? quote.tier_depth_cm : null}
+            />
+          }
         />
         <button
           type="button"
@@ -437,13 +464,13 @@ export function KitConfigurator({ onCheckout }: Props) {
         {/* celular: preço ao vivo enquanto mexe na medida */}
         {quote?.ok && (
           <div
-            className="price-dock sticky bottom-3 z-20 mt-4 lg:hidden"
-            data-hidden={priceVisible}
-            aria-hidden={priceVisible}
+            className="price-dock fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-40 lg:hidden"
+            data-hidden={priceVisible || !inConfigurator}
+            aria-hidden={priceVisible || !inConfigurator}
           >
             <button
               type="button"
-              tabIndex={priceVisible ? -1 : 0}
+              tabIndex={priceVisible || !inConfigurator ? -1 : 0}
               onClick={() =>
                 priceRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
               }
@@ -464,6 +491,34 @@ export function KitConfigurator({ onCheckout }: Props) {
                 Ver e comprar
               </span>
             </button>
+          </div>
+        )}
+
+        {/* celular, fora da faixa: a saída "sob medida" fica no mesmo lugar do preço */}
+        {quote && !quote.ok && quote.reason === "fora_da_faixa" && (
+          <div
+            className="price-dock fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-40 lg:hidden"
+            data-hidden={priceVisible || !inConfigurator}
+            aria-hidden={priceVisible || !inConfigurator}
+          >
+            <a
+              href={`${WHATSAPP}?text=${waText}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              tabIndex={priceVisible || !inConfigurator ? -1 : 0}
+              data-track="dock_sob_medida"
+              className="press flex w-full items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card/95 px-4 py-3 text-left shadow-[0_12px_32px_oklch(0_0_0/0.55)] backdrop-blur"
+            >
+              <span>
+                <span className="block text-xs text-secondary-foreground">
+                  {width} × {depth} cm
+                </span>
+                <span className="block text-base font-bold text-foreground">Feito sob medida</span>
+              </span>
+              <span className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground">
+                Pedir orçamento
+              </span>
+            </a>
           </div>
         )}
 
