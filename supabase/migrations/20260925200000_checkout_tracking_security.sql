@@ -160,7 +160,7 @@ begin
   for p in
     select policyname from pg_policies
     where schemaname = 'storage' and tablename = 'objects' and cmd in ('SELECT', 'ALL')
-      and coalesce(qual, '') ilike '%churrasqueira-fotos%'
+      and (coalesce(qual, '') ilike '%churrasqueira-fotos%' or ('anon' = any (roles) and coalesce(qual, 'true') = 'true'))
   loop
     execute format('drop policy %I on storage.objects', p.policyname);
   end loop;
