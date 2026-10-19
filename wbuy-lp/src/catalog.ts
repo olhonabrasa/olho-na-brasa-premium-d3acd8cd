@@ -27,7 +27,10 @@ const KIT_BRASEIRO: Record<number, number> = {
   70: 262664,
 };
 
+// suporte de 3 níveis (a loja também tem 4 níveis, 501953–501972 e 503460; o 3D desenha 3)
 const SUPORTE: Record<number, number> = {
+  35: 501951,
+  40: 501952,
   45: 445846,
   50: 257876,
   55: 257877,
@@ -46,16 +49,17 @@ const SUPORTE: Record<number, number> = {
   120: 269362,
   125: 454180,
   130: 454152,
+  135: 503459,
 };
 const DESCANSO: Record<number, number> = {
-  27: 454182,
-  32: 454181,
-  37: 445951,
+  30: 503430,
+  35: 503431,
   40: 454183,
-  44: 445954,
+  45: 503432,
   50: 257715,
-  54: 454184,
-  64: 454185,
+  55: 503433,
+  60: 503434,
+  65: 503435,
 };
 const ESPETO: Record<number, number> = {
   60: 351799,
@@ -72,14 +76,25 @@ const URUGUAIA: Record<number, Record<number, number>> = {
   37: { 35: 446164, 40: 446165, 45: 446166, 50: 446167, 55: 446168 },
   40: { 35: 446179, 40: 445981, 45: 445982, 50: 445983, 55: 445984 },
   50: { 35: 454187, 40: 445993, 45: 445994, 50: 445995, 55: 445866 },
+  35: { 35: 503436, 40: 503437, 45: 503438, 50: 503439, 55: 503440 },
+  42: { 35: 503441, 40: 503442, 45: 503443, 50: 503444, 55: 503445 },
+  45: { 35: 503446, 40: 503447, 45: 503448, 50: 503449, 55: 503450 },
+  55: { 35: 503451, 40: 503452, 45: 503453, 50: 503454, 55: 503455 },
 };
 
-export type PecaTipo = "suporte" | "uruguaia" | "descanso" | "espeto_chata" | "espeto_v";
+export type PecaTipo =
+  | "suporte"
+  | "uruguaia"
+  | "descanso"
+  | "espeto_duplo"
+  | "espeto_chata"
+  | "espeto_v";
 
 export const NOMES: Record<PecaTipo, string> = {
   suporte: "Suporte suspenso",
   uruguaia: "Grelha uruguaia",
   descanso: "Grelha de descanso",
+  espeto_duplo: "Espeto duplo",
   espeto_chata: "Espeto barra chata",
   espeto_v: "Espeto V",
 };
@@ -116,6 +131,8 @@ export function skuPeca(p: Peca): string | null {
       return SUPORTE[p.larguraCm] ? `5046861.101891.0.${SUPORTE[p.larguraCm]}` : null;
     case "descanso":
       return DESCANSO[p.larguraCm] ? `5046898.100848.0.${DESCANSO[p.larguraCm]}` : null;
+    case "espeto_duplo":
+      return ESPETO[p.larguraCm] ? `4894689.100851.0.${ESPETO[p.larguraCm]}` : null;
     case "espeto_chata":
       return ESPETO[p.larguraCm] ? `4894682.100851.0.${ESPETO[p.larguraCm]}` : null;
     case "espeto_v":

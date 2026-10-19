@@ -15,7 +15,7 @@ import {
   type Peca,
 } from "./catalog";
 
-export type EspetoTipo = "espeto_chata" | "espeto_v";
+export type EspetoTipo = "espeto_duplo" | "espeto_chata" | "espeto_v";
 
 export type Montagem = {
   suporte: { on: boolean; larguraCm: number };
@@ -26,8 +26,8 @@ export type Montagem = {
 
 export type Grupo = keyof Montagem;
 
-export const A_MIN = 45;
-export const A_MAX = 130;
+export const A_MIN = 35;
+export const A_MAX = 139;
 export const B_MIN = 35;
 export const B_MAX = 74;
 
@@ -50,7 +50,8 @@ function grelhasDoSuporte(s: number) {
     [95, 40, 40, 2],
   ];
   const l = tabela.find(([ate]) => s <= ate);
-  if (l) return { uruguaia: l[1], descanso: l[2], descansoQtd: l[3] };
+  // a loja vende descanso de 5 em 5 cm: a medida da fábrica cai para a largura vendida logo abaixo
+  if (l) return { uruguaia: l[1], descanso: encaixar(MEDIDAS.descanso, l[2]), descansoQtd: l[3] };
   const meia = (s - 10) / 2;
   return {
     uruguaia: encaixar(MEDIDAS.uruguaiaLargura, meia),
@@ -70,7 +71,7 @@ export function montagemSugerida(a: number, b: number): Montagem {
     descanso: { qtd: g.descansoQtd, larguraCm: g.descanso },
     espeto: {
       qtd: 2,
-      tipo: "espeto_chata",
+      tipo: "espeto_duplo",
       comprimentoCm: encaixarAcima(MEDIDAS.espeto, comp + 25),
     },
   };
@@ -113,7 +114,7 @@ export function composicaoMontagem(m: Montagem, b: number): Composicao {
       ? { larguraCm: m.descanso.larguraCm, quantidade: m.descanso.qtd }
       : null,
     espetos: {
-      tipo: "simples",
+      tipo: m.espeto.tipo === "espeto_duplo" ? "duplo" : "simples",
       comprimentoCm: m.espeto.qtd ? m.espeto.comprimentoCm : 0,
       quantidade: m.espeto.qtd,
     },

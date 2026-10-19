@@ -52,7 +52,7 @@ const INFO: Record<Grupo, { titulo: string; sub: string }> = {
   },
   espeto: {
     titulo: "Espetos",
-    sub: "Barra chata para cortes grandes; V para linguiça e coração não girarem.",
+    sub: "Duplo segura a carne sem girar; barra chata para cortes grandes; V para linguiça e coração.",
   },
 };
 
@@ -194,7 +194,7 @@ function iniciar(root: HTMLElement) {
     if (g === "uruguaia")
       return `${m.uruguaia.qtd}× ${m.uruguaia.larguraCm}×${m.uruguaia.comprimentoCm} cm`;
     if (g === "descanso") return `${m.descanso.qtd}× ${m.descanso.larguraCm} cm`;
-    return `${m.espeto.qtd}× ${m.espeto.tipo === "espeto_v" ? "V" : "barra chata"} ${m.espeto.comprimentoCm} cm`;
+    return `${m.espeto.qtd}× ${{ espeto_duplo: "duplo", espeto_chata: "barra chata", espeto_v: "V" }[m.espeto.tipo]} ${m.espeto.comprimentoCm} cm`;
   }
 
   // pontos de "+" sobre o canvas
@@ -316,6 +316,7 @@ function iniciar(root: HTMLElement) {
       cartao(
         "espeto",
         `<div class="onb-seg" role="group" aria-label="Tipo de espeto">
+          <button type="button" data-campo-set="espeto.tipo" data-valor="espeto_duplo" aria-pressed="${m.espeto.tipo === "espeto_duplo"}">Duplo</button>
           <button type="button" data-campo-set="espeto.tipo" data-valor="espeto_chata" aria-pressed="${m.espeto.tipo === "espeto_chata"}">Barra chata</button>
           <button type="button" data-campo-set="espeto.tipo" data-valor="espeto_v" aria-pressed="${m.espeto.tipo === "espeto_v"}">V</button>
         </div>
