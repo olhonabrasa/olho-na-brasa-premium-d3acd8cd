@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "node --test src/lib/*.test.ts"
+    "test": "node --test src/lib/*.test.ts",
+    "dev:wbuy": "vite --config wbuy-lp/vite.config.ts",
+    "build:wbuy": "vite build --config wbuy-lp/vite.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

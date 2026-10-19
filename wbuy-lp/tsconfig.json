@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["src/**/*.ts", "../src/lib/kitComposition.ts", "../src/components/checkout/kit3d/geometry.ts"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["../src/*"] }
+  }
+}

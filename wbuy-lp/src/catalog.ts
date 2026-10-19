@@ -1,0 +1,147 @@
+// Catálogo da loja Wbuy (olhonabrasa.com.br): SKUs reais de cada peça e do
+// Kit Premium, coletados das páginas de produto. O carrinho e o checkout da
+// Wbuy recebem exatamente estes SKUs, então frete, estoque, cupom e pagamento
+// continuam sendo os da loja.
+
+/** Kit Premium: 5250835.219479.{largura}.{braseiro} */
+const KIT_BASE = "5250835.219479";
+const KIT_LARGURA: Record<number, number> = {
+  50: 594832,
+  55: 594833,
+  60: 594855,
+  65: 594856,
+  70: 594857,
+  75: 594858,
+  80: 594859,
+  85: 594860,
+  90: 594861,
+  95: 594862,
+};
+const KIT_BRASEIRO: Record<number, number> = {
+  40: 278257,
+  45: 289188,
+  50: 278258,
+  55: 289189,
+  60: 262662,
+  65: 294569,
+  70: 262664,
+};
+
+const SUPORTE: Record<number, number> = {
+  45: 445846,
+  50: 257876,
+  55: 257877,
+  60: 257878,
+  65: 257879,
+  70: 257880,
+  75: 266809,
+  80: 266810,
+  85: 266811,
+  90: 266812,
+  95: 406778,
+  100: 269361,
+  105: 454149,
+  110: 454179,
+  115: 454150,
+  120: 269362,
+  125: 454180,
+  130: 454152,
+};
+const DESCANSO: Record<number, number> = {
+  27: 454182,
+  32: 454181,
+  37: 445951,
+  40: 454183,
+  44: 445954,
+  50: 257715,
+  54: 454184,
+  64: 454185,
+};
+const ESPETO: Record<number, number> = {
+  60: 351799,
+  65: 351800,
+  70: 351801,
+  75: 351802,
+  80: 351803,
+};
+/** uruguaia[largura][comprimento] */
+const URUGUAIA: Record<number, Record<number, number>> = {
+  22: { 35: 453587, 40: 453588, 45: 453589, 50: 453590, 55: 446125 },
+  27: { 35: 446130, 40: 446131, 45: 446132, 50: 446133, 55: 446134 },
+  32: { 35: 446147, 40: 446148, 45: 446149, 50: 446150, 55: 446151 },
+  37: { 35: 446164, 40: 446165, 45: 446166, 50: 446167, 55: 446168 },
+  40: { 35: 446179, 40: 445981, 45: 445982, 50: 445983, 55: 445984 },
+  50: { 35: 454187, 40: 445993, 45: 445994, 50: 445995, 55: 445866 },
+};
+
+export type PecaTipo = "suporte" | "uruguaia" | "descanso" | "espeto_chata" | "espeto_v";
+
+export const NOMES: Record<PecaTipo, string> = {
+  suporte: "Suporte suspenso",
+  uruguaia: "Grelha uruguaia",
+  descanso: "Grelha de descanso",
+  espeto_chata: "Espeto barra chata",
+  espeto_v: "Espeto V",
+};
+
+export const MEDIDAS = {
+  suporte: Object.keys(SUPORTE).map(Number),
+  descanso: Object.keys(DESCANSO).map(Number),
+  espeto: Object.keys(ESPETO).map(Number),
+  uruguaiaLargura: Object.keys(URUGUAIA).map(Number),
+  uruguaiaComprimento: [35, 40, 45, 50, 55],
+};
+
+export const KIT_A = Object.keys(KIT_LARGURA).map(Number);
+export const KIT_B = Object.keys(KIT_BRASEIRO).map(Number);
+
+export type Peca = {
+  tipo: PecaTipo;
+  /** largura em cm (comprimento do espeto) */
+  larguraCm: number;
+  /** só a uruguaia tem comprimento */
+  comprimentoCm?: number;
+  qtd: number;
+};
+
+export function skuKit(aFaixa: number, bFaixa: number): string | null {
+  const l = KIT_LARGURA[aFaixa];
+  const b = KIT_BRASEIRO[bFaixa];
+  return l && b ? `${KIT_BASE}.${l}.${b}` : null;
+}
+
+export function skuPeca(p: Peca): string | null {
+  switch (p.tipo) {
+    case "suporte":
+      return SUPORTE[p.larguraCm] ? `5046861.101891.0.${SUPORTE[p.larguraCm]}` : null;
+    case "descanso":
+      return DESCANSO[p.larguraCm] ? `5046898.100848.0.${DESCANSO[p.larguraCm]}` : null;
+    case "espeto_chata":
+      return ESPETO[p.larguraCm] ? `4894682.100851.0.${ESPETO[p.larguraCm]}` : null;
+    case "espeto_v":
+      return ESPETO[p.larguraCm] ? `4896947.100851.0.${ESPETO[p.larguraCm]}` : null;
+    case "uruguaia": {
+      const v = URUGUAIA[p.larguraCm]?.[p.comprimentoCm ?? 0];
+      return v ? `5047524.100848.0.${v}` : null;
+    }
+  }
+}
+
+/** Medida mais próxima disponível (para baixo, senão a menor). */
+export function encaixar(lista: number[], v: number) {
+  const ord = [...lista].sort((a, b) => a - b);
+  let r = ord[0];
+  for (const x of ord) if (x <= v) r = x;
+  return r;
+}
+
+/** Medida mais próxima disponível (para cima, senão a maior). */
+export function encaixarAcima(lista: number[], v: number) {
+  const ord = [...lista].sort((a, b) => a - b);
+  return ord.find((x) => x >= v) ?? ord[ord.length - 1];
+}
+
+export function descreverPeca(p: Peca) {
+  if (p.tipo === "uruguaia") return `${NOMES.uruguaia} ${p.larguraCm}×${p.comprimentoCm} cm`;
+  return `${NOMES[p.tipo]} ${p.larguraCm} cm`;
+}
