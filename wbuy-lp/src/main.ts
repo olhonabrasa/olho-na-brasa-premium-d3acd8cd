@@ -21,51 +21,146 @@ import {
   type Grupo,
   type Montagem,
 } from "./builder";
-import { MEDIDAS } from "./catalog";
+import { ACESSORIOS, COOKTOP_SKU, MEDIDAS } from "./catalog";
 import type { Composicao } from "@/lib/kitComposition";
-import { adicionarAoCarrinho, irParaCarrinho, MODO_SIMULADO, preco, type Preco } from "./wbuy";
+import {
+  adicionarAoCarrinho,
+  irParaCarrinho,
+  MODO_SIMULADO,
+  preco,
+  type ItemCarrinho,
+} from "./wbuy";
 import type { BuilderStage } from "./builderStage";
+import type { Acessorios, Ambiente, Instalacao } from "./cena3d";
 import { desenhoFrente } from "./fallback";
 
 const ASSET_BASE: string = import.meta.env.DEV ? "/" : "https://premium.olhonabrasa.com.br/";
+const IMG = ASSET_BASE + "wbuy-lp/img/";
+const VIDEOS_CLIENTE = "https://olho-na-brasa-premium.lovable.app/__l5e/assets-v1/";
 const WHATS = "https://wa.me/554740420956";
+const MAPS =
+  "https://www.google.com/maps/place/Olho+na+Brasa/@-27.1016701,-48.6187495,738m/data=!3m1!1e3!4m8!3m7!1s0x94d8b100c4230f17:0x899b6cbbbfaceb99!8m2!3d-27.1016701!4d-48.6161746!9m1!1b1!16s%2Fg%2F11rzr1kln5";
 
 type Modo = "kit" | "pecas";
-type Estado = { a: number; b: number; modo: Modo; m: Montagem; foco: Grupo | null };
+type AccId = keyof Acessorios;
+type Estado = {
+  a: number;
+  b: number;
+  modo: Modo;
+  m: Montagem;
+  foco: Grupo | null;
+  inst: Instalacao;
+  amb: Ambiente;
+  acc: Acessorios;
+};
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+const foto = (nome: string, alt: string, w: number, h: number, cls = "", eager = false) =>
+  `<img src="${IMG}${nome}.webp" alt="${esc(alt)}" width="${w}" height="${h}"${cls ? ` class="${cls}"` : ""} ${
+    eager ? 'fetchpriority="high"' : 'loading="lazy"'
+  } decoding="async">`;
 
 const INFO: Record<Grupo, { titulo: string; sub: string }> = {
   suporte: {
-    titulo: "Suporte suspenso",
-    sub: "Estrutura de 3 níveis que fixa na parede da churrasqueira. É onde tudo encaixa.",
+    titulo: "Suporte",
+    sub: "A estrutura de 3 níveis onde tudo encaixa: grelha embaixo, espetos no meio, descanso em cima.",
   },
   uruguaia: {
-    titulo: "Grelha uruguaia",
-    sub: "A grelha principal. Varões em V que escorrem a gordura, cabo que não esquenta.",
+    titulo: "Grelhas",
+    sub: "Uruguaia, com varões em V que escorrem a gordura. Argentina, com canaletas que levam a gordura para fora da brasa.",
   },
   descanso: {
     titulo: "Grelha de descanso",
-    sub: "No nível de cima, mantém a carne pronta aquecida sem passar do ponto.",
+    sub: "No nível de cima, segura a carne pronta quente sem passar do ponto.",
   },
   espeto: {
     titulo: "Espetos",
-    sub: "Duplo segura a carne sem girar; barra chata para cortes grandes; V para linguiça e coração.",
+    sub: "Duplo segura a peça sem girar. Barra chata para cortes grandes. V para linguiça e coração.",
   },
 };
+
+const AMBIENTES: { id: Ambiente; nome: string; sub: string }[] = [
+  { id: "fechada", nome: "Fechada", sub: "Alvenaria tradicional" },
+  { id: "lateral", nome: "Abertura lateral", sub: "Com vidro de um lado" },
+  { id: "bancada", nome: "Bancada", sub: "Braseiro embutido" },
+  { id: "gourmet", nome: "Nicho gourmet", sub: "Granito e inox" },
+  { id: "estudio", nome: "Só o kit", sub: "Sem churrasqueira" },
+];
+
+const ACC_INFO: Record<AccId, { titulo: string; texto: string }> = {
+  giratorio: {
+    titulo: "Espeto giratório com motor",
+    texto: "Gira sozinho no ponto da brasa. Vem com o cesto de miúdos.",
+  },
+  cesto: {
+    titulo: "Cesto de miúdos",
+    texto: "Coração, linguicinha e queijo assam por igual, sem cair.",
+  },
+  bandeja: {
+    titulo: "Bandeja de coração",
+    texto: "Chapa perfurada no espeto. Coração dourado sem espetar um por um.",
+  },
+};
+
+const REVIEWS = [
+  {
+    quote:
+      "Produto de excelente qualidade, com um pré e pós venda excelentes. Entregam o que prometem. Customizam seu pedido e orientam com segurança na retirada das medidas e como fazer sua instalação.",
+    author: "Luiz Carlos Crab",
+  },
+  {
+    quote:
+      "Adquiri o suporte suspenso para espetos e uma grelha de descanso. Informei as medidas da minha churrasqueira e logo recebi o link com os valores. Recebi em casa muito antes do prazo.",
+    author: "Cliente Google",
+  },
+  { quote: "Produto de extrema qualidade. Superou as expectativas.", author: "Diego Macedo" },
+];
+
+const VIDEOS = [
+  [
+    "70b8fd32-44f4-41db-b3cc-db03b92ea129/video-cliente-1.mp4",
+    "70362e66-6be1-400e-8690-d66115d34b0e/poster-cliente-1.jpg",
+    "Kit instalado",
+  ],
+  [
+    "130136b1-821e-4efb-8aa6-bf5adf20ac0f/video-cliente-2.mp4",
+    "582c1dd7-9d4f-4fa8-bddf-d74a80a53615/poster-cliente-2.jpg",
+    "Reação ao receber",
+  ],
+  [
+    "6955bfb5-f929-4bdb-a19d-e26903cce8ab/video-cliente-4.mp4",
+    "6ae0da39-5bfc-4960-b07b-ab12f8e142d9/poster-cliente-4.jpg",
+    "Encaixe sob medida",
+  ],
+  [
+    "da069deb-c758-4daa-b488-d23e8abbfb54/video-cliente-5.mp4",
+    "b6419e92-cbed-4c73-aa32-5ddeaff1978e/poster-cliente-5.jpg",
+    "Primeiro churrasco",
+  ],
+];
 
 function iniciar(root: HTMLElement) {
   const params = new URLSearchParams(location.search);
   const a0 = Number(params.get("a")) || 70;
   const b0 = Number(params.get("b")) || 60;
+  const inst: Instalacao = params.get("inst") === "cooktop" ? "cooktop" : "suspenso";
+  const ambParam = params.get("amb") as Ambiente | null;
   const s: Estado = {
     a: a0,
     b: b0,
     modo: params.get("modo") === "pecas" ? "pecas" : "kit",
     m: montagemSugerida(a0, b0),
     foco: null,
+    inst,
+    amb:
+      ambParam && AMBIENTES.some((x) => x.id === ambParam)
+        ? ambParam
+        : inst === "cooktop"
+          ? "bancada"
+          : "lateral",
+    acc: { cesto: false, giratorio: false, bandeja: false },
   };
   if (!faixaKit(s.a, s.b)) s.modo = "pecas";
 
@@ -100,7 +195,7 @@ function iniciar(root: HTMLElement) {
         if (e.isIntersecting && !stage && !stageEl.dataset.carregando) carregar3D();
         stage?.setActive(e.isIntersecting);
       },
-      { rootMargin: "200px 0px" },
+      { rootMargin: "300px 0px" },
     );
     io.observe(stageEl);
   }
@@ -132,12 +227,22 @@ function iniciar(root: HTMLElement) {
   }
 
   function escolherNo3D(parte: string | null, x: number, y: number) {
-    const g = parte ? grupoDaParte(parte) : null;
+    if (!parte) return fecharPop();
+    stage?.highlight(parte);
+    if (parte.startsWith("acc_")) return abrirPopExtra("acc", parte, x, y);
+    if (parte === "cooktop_base") return abrirPopExtra("cooktop", parte, x, y);
+    const g = grupoDaParte(parte);
     s.foco = g;
-    stage?.highlight(g ? parte : null);
     if (!g) return fecharPop();
     abrirPop(g, x, y);
     marcarCartao(g);
+  }
+
+  function posPop(x: number, y: number) {
+    const w = stageEl.clientWidth;
+    pop.style.left = Math.min(Math.max(x, 115), w - 115) + "px";
+    pop.style.top = Math.max(y - 12, 76) + "px";
+    pop.hidden = false;
   }
 
   function abrirPop(g: Grupo, x: number, y: number) {
@@ -153,11 +258,20 @@ function iniciar(root: HTMLElement) {
     } else corpo += `<button type="button" data-pop="personalizar">Trocar esta peça</button>`;
     pop.innerHTML = corpo;
     pop.dataset.grupo = g;
-    const w = stageEl.clientWidth;
-    pop.style.left = Math.min(Math.max(x, 110), w - 110) + "px";
-    pop.style.top = Math.max(y - 12, 70) + "px";
-    pop.hidden = false;
+    posPop(x, y);
   }
+
+  function abrirPopExtra(tipo: "acc" | "cooktop", parte: string, x: number, y: number) {
+    if (tipo === "cooktop") {
+      pop.innerHTML = `<strong>Encaixe cooktop</strong><span>Apoia na bancada, sem furar a parede</span><button type="button" data-pop="suspenso">Trocar para suspenso</button>`;
+    } else {
+      const id = parte.replace("acc_", "") as AccId;
+      pop.innerHTML = `<strong>${ACC_INFO[id].titulo}</strong><span>${ACC_INFO[id].texto}</span><button type="button" data-pop="tirar-acc" data-acc="${id}">Tirar do kit</button>`;
+    }
+    pop.dataset.grupo = "";
+    posPop(x, y);
+  }
+
   function fecharPop() {
     pop.hidden = true;
     s.foco = null;
@@ -175,6 +289,8 @@ function iniciar(root: HTMLElement) {
     } else if (acao === "editar") irParaCartao(g);
     else if (acao === "incluir") alterar(g, +1);
     else if (acao === "remover") alterar(g, -1);
+    else if (acao === "suspenso") definirInstalacao("suspenso");
+    else if (acao === "tirar-acc") alternarAcessorio(b.dataset.acc as AccId, false);
     fecharPop();
   });
 
@@ -183,7 +299,7 @@ function iniciar(root: HTMLElement) {
       const c = compAtual;
       if (g === "suporte") return `${c.suporteLarguraCm} cm · 3 níveis`;
       if (g === "uruguaia")
-        return `${c.uruguaia.quantidade}× ${c.uruguaia.larguraCm}×${c.uruguaia.comprimentoCm} cm`;
+        return `${c.uruguaia.quantidade}× uruguaia ${c.uruguaia.larguraCm}×${c.uruguaia.comprimentoCm} cm`;
       if (g === "descanso")
         return c.descanso ? `${c.descanso.quantidade}× ${c.descanso.larguraCm} cm` : "";
       return `${c.espetos.quantidade}× duplo ${c.espetos.comprimentoCm} cm`;
@@ -192,9 +308,12 @@ function iniciar(root: HTMLElement) {
     if (g === "suporte")
       return m.suporte.on ? `${m.suporte.larguraCm} cm · 3 níveis` : "Ainda não incluído";
     if (g === "uruguaia")
-      return `${m.uruguaia.qtd}× ${m.uruguaia.larguraCm}×${m.uruguaia.comprimentoCm} cm`;
+      return `${m.uruguaia.qtd}× ${m.uruguaia.tipo} ${m.uruguaia.larguraCm}×${m.uruguaia.comprimentoCm} cm`;
     if (g === "descanso") return `${m.descanso.qtd}× ${m.descanso.larguraCm} cm`;
-    return `${m.espeto.qtd}× ${{ espeto_duplo: "duplo", espeto_chata: "barra chata", espeto_v: "V" }[m.espeto.tipo]} ${m.espeto.comprimentoCm} cm`;
+    const tipo = { espeto_duplo: "duplo", espeto_chata: "barra chata", espeto_v: "V" }[
+      m.espeto.tipo
+    ];
+    return `${m.espeto.qtd}× ${tipo} ${m.espeto.comprimentoCm} cm`;
   }
 
   // pontos de "+" sobre o canvas
@@ -217,7 +336,6 @@ function iniciar(root: HTMLElement) {
       const el = els[i] as HTMLElement | undefined;
       if (!el) return;
       const p = stage!.project(a.pos);
-      // dois pontos no mesmo lugar: empurra o de baixo para não cobrir o outro
       while (usados.some((u) => Math.abs(u.x - p.x) < 120 && Math.abs(u.y - p.y) < 42)) p.y += 44;
       usados.push({ x: p.x, y: p.y });
       el.style.transform = `translate(${p.x}px, ${p.y}px)`;
@@ -230,41 +348,66 @@ function iniciar(root: HTMLElement) {
   });
 
   // ---------- estado -> tela ----------
+  const comSuporte = () => (s.modo === "kit" ? !!faixaKit(s.a, s.b) : s.m.suporte.on);
+
   function desenhar() {
     compAtual = s.modo === "kit" ? composicaoKit(s.a, s.b) : composicaoMontagem(s.m, s.b);
     if (compAtual) {
       const fantasma = s.modo === "pecas" && !s.m.suporte.on ? ["suporte"] : [];
-      stage?.update(compAtual, { fantasma });
+      stage?.update(compAtual, {
+        fantasma,
+        instalacao: s.inst,
+        ambiente: s.amb,
+        grelha: s.modo === "pecas" ? s.m.uruguaia.tipo : "uruguaia",
+        acessorios: s.acc,
+        boca: { a: s.a, b: s.b },
+      });
       $(".onb-fallback").innerHTML = desenhoFrente(compAtual, fantasma.length > 0);
       canvas.setAttribute("aria-label", descreverParaLeitor());
     }
     montarHotspots();
+    renderEscolhas();
     renderConteudo();
+    renderAcessorios();
     atualizarPreco();
   }
 
   function descreverParaLeitor() {
     const itens =
       s.modo === "kit" && compAtual
-        ? conteudoKit(compAtual)
+        ? conteudoKit(compAtual, s.inst === "cooktop")
         : pecasDaMontagem(s.m).map((i) => `${i.peca.qtd}× ${i.rotulo}`);
-    return `Kit em 3D para churrasqueira de ${s.a} por ${s.b} cm: ${itens.join(", ")}.`;
+    const amb = AMBIENTES.find((x) => x.id === s.amb)!.nome.toLowerCase();
+    return `Kit ${s.inst} em 3D, churrasqueira ${amb} de ${s.a} por ${s.b} cm: ${itens.join(", ")}.`;
+  }
+
+  function renderEscolhas() {
+    root
+      .querySelectorAll<HTMLButtonElement>(".onb-painel [data-inst]")
+      .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.inst === s.inst)));
+    root
+      .querySelectorAll<HTMLButtonElement>("[data-amb]")
+      .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.amb === s.amb)));
+    $(".onb-etiqueta-palco").textContent =
+      (s.inst === "cooktop" ? "Cooktop" : "Suspenso") +
+      " · " +
+      AMBIENTES.find((x) => x.id === s.amb)!.nome;
   }
 
   function renderConteudo() {
     const f = faixaKit(s.a, s.b);
-    root.querySelectorAll<HTMLButtonElement>("[data-modo]").forEach((b) => {
+    root.querySelectorAll<HTMLButtonElement>(".onb-painel [data-modo]").forEach((b) => {
       b.setAttribute("aria-pressed", String(b.dataset.modo === s.modo));
       if (b.dataset.modo === "kit") b.disabled = !f;
     });
     $(".onb-faixa").innerHTML = f
-      ? `Kit da faixa <strong>${f.a}×${f.b} cm</strong> — serve na sua boca de ${s.a}×${s.b} cm.`
-      : `Sua medida está fora das faixas do Kit Premium (50–99 × 40–74 cm). Monte peça por peça abaixo ou <a href="${WHATS}" target="_blank" rel="noopener">fale com a fábrica</a>.`;
+      ? `Kit da faixa <strong>${f.a}×${f.b} cm</strong>, para a sua boca de ${s.a}×${s.b} cm.`
+      : `Sua medida está fora das faixas do kit completo (50–99 × 40–74 cm). Monte peça por peça ou <a href="${WHATS}" target="_blank" rel="noopener">fale com a fábrica</a>.`;
 
     if (s.modo === "kit") {
       const c = compAtual;
       conteudo.innerHTML = c
-        ? `<ul class="onb-lista">${conteudoKit(c)
+        ? `<ul class="onb-lista">${conteudoKit(c, s.inst === "cooktop")
             .map((l) => `<li>${l}</li>`)
             .join("")}</ul>
           <button type="button" class="onb-link" data-modo-ir="pecas">Quer trocar ou tirar alguma peça? Monte peça por peça →</button>`
@@ -283,9 +426,16 @@ function iniciar(root: HTMLElement) {
         <output aria-live="polite">${q}</output>
         <button type="button" data-acao="mais" data-grupo="${g}" aria-label="Mais" ${q >= max ? "disabled" : ""}>+</button>
       </div>`;
+    const seg = (campo: string, atual: string, opcoes: [string, string][], rotulo: string) =>
+      `<div class="onb-seg" role="group" aria-label="${rotulo}">${opcoes
+        .map(
+          ([v, n]) =>
+            `<button type="button" data-campo-set="${campo}" data-valor="${v}" aria-pressed="${atual === v}">${n}</button>`,
+        )
+        .join("")}</div>`;
     const cartao = (g: Grupo, corpo: string, ativo: boolean) =>
       `<article class="onb-card${ativo ? "" : " vazio"}${s.foco === g ? " foco" : ""}" data-cartao="${g}" tabindex="-1">
-        <header><h3>${INFO[g].titulo}</h3><p class="onb-preco-peca" data-preco-grupo="${g}"></p></header>
+        <header><h4>${INFO[g].titulo}</h4><p class="onb-preco-peca" data-preco-grupo="${g}"></p></header>
         <p class="onb-sub">${INFO[g].sub}</p>${corpo}</article>`;
 
     conteudo.innerHTML = [
@@ -299,7 +449,16 @@ function iniciar(root: HTMLElement) {
       ),
       cartao(
         "uruguaia",
-        `<div class="onb-row">
+        `${seg(
+          "uruguaia.tipo",
+          m.uruguaia.tipo,
+          [
+            ["uruguaia", "Uruguaia"],
+            ["argentina", "Argentina"],
+          ],
+          "Tipo de grelha",
+        )}
+        <div class="onb-row">
           <label>Medida <span class="onb-par"><select data-campo="uruguaia.larguraCm" aria-label="Largura">${opt(MEDIDAS.uruguaiaLargura, m.uruguaia.larguraCm)}</select>×<select data-campo="uruguaia.comprimentoCm" aria-label="Comprimento">${opt(MEDIDAS.uruguaiaComprimento, m.uruguaia.comprimentoCm)}</select></span></label>
           ${stepper("uruguaia", m.uruguaia.qtd, cap.uruguaia)}
         </div><p class="onb-cap">Cabem até ${cap.uruguaia} neste suporte.</p>`,
@@ -315,11 +474,16 @@ function iniciar(root: HTMLElement) {
       ),
       cartao(
         "espeto",
-        `<div class="onb-seg" role="group" aria-label="Tipo de espeto">
-          <button type="button" data-campo-set="espeto.tipo" data-valor="espeto_duplo" aria-pressed="${m.espeto.tipo === "espeto_duplo"}">Duplo</button>
-          <button type="button" data-campo-set="espeto.tipo" data-valor="espeto_chata" aria-pressed="${m.espeto.tipo === "espeto_chata"}">Barra chata</button>
-          <button type="button" data-campo-set="espeto.tipo" data-valor="espeto_v" aria-pressed="${m.espeto.tipo === "espeto_v"}">V</button>
-        </div>
+        `${seg(
+          "espeto.tipo",
+          m.espeto.tipo,
+          [
+            ["espeto_duplo", "Duplo"],
+            ["espeto_chata", "Barra chata"],
+            ["espeto_v", "V"],
+          ],
+          "Tipo de espeto",
+        )}
         <div class="onb-row">
           <label>Comprimento <select data-campo="espeto.comprimentoCm">${opt(MEDIDAS.espeto, m.espeto.comprimentoCm)}</select></label>
           ${stepper("espeto", m.espeto.qtd, cap.espeto)}
@@ -328,6 +492,19 @@ function iniciar(root: HTMLElement) {
       ),
       `<button type="button" class="onb-link" data-sugerir>Voltar às peças sugeridas para ${s.a}×${s.b} cm</button>`,
     ].join("");
+  }
+
+  function renderAcessorios() {
+    root.querySelectorAll<HTMLButtonElement>("[data-acc-toggle]").forEach((b) => {
+      const id = b.dataset.accToggle as AccId;
+      const incluido = id === "cesto" && s.acc.giratorio;
+      const on = s.acc[id] || incluido;
+      b.setAttribute("aria-pressed", String(on));
+      b.disabled = incluido;
+      const rot = b.querySelector(".onb-acc-acao");
+      if (rot)
+        rot.textContent = incluido ? "Já vem no combo" : on ? "No seu kit ✓" : "Adicionar ao kit";
+    });
   }
 
   function marcarCartao(g: Grupo | null) {
@@ -362,22 +539,51 @@ function iniciar(root: HTMLElement) {
     desenhar();
   }
 
-  // ---------- preço ----------
+  function definirInstalacao(inst: Instalacao) {
+    s.inst = inst;
+    // churrasqueira coerente com a escolha, a menos que o cliente já tenha escolhido outra
+    if (inst === "cooktop" && s.amb === "fechada") s.amb = "bancada";
+    if (inst === "suspenso" && s.amb === "bancada") s.amb = "lateral";
+    desenhar();
+  }
+
+  function alternarAcessorio(id: AccId, on?: boolean) {
+    s.acc[id] = on ?? !s.acc[id];
+    if (id === "giratorio" && s.acc.giratorio) s.acc.cesto = false;
+    desenhar();
+  }
+
+  // ---------- carrinho e preço ----------
+  type Item = ItemCarrinho & { grupo: Grupo | null };
+  function itensCarrinho(): Item[] {
+    const f = faixaKit(s.a, s.b);
+    const nota = `Medida da churrasqueira: ${s.a}x${s.b} cm · ${s.inst} · ${s.amb} (LP Monte seu kit)`;
+    const base: Item[] =
+      s.modo === "kit"
+        ? f
+          ? [{ sku: skuKit(f.a, f.b)!, qtd: 1, anotacao: nota, grupo: null }]
+          : []
+        : pecasDaMontagem(s.m).map((i, k) => ({
+            sku: i.sku,
+            qtd: i.peca.qtd,
+            anotacao: k === 0 ? nota : "",
+            grupo: (i.peca.tipo.startsWith("espeto")
+              ? "espeto"
+              : i.peca.tipo === "argentina"
+                ? "uruguaia"
+                : i.peca.tipo) as Grupo,
+          }));
+    if (s.inst === "cooktop" && comSuporte()) base.push({ sku: COOKTOP_SKU, qtd: 1, grupo: null });
+    (Object.keys(s.acc) as AccId[]).forEach((id) => {
+      if (s.acc[id]) base.push({ sku: ACESSORIOS[id].sku, qtd: 1, grupo: null });
+    });
+    return base;
+  }
+
   let geracao = 0;
   async function atualizarPreco() {
     const g = ++geracao;
-    const itens =
-      s.modo === "kit"
-        ? (() => {
-            const f = faixaKit(s.a, s.b);
-            const sku = f && skuKit(f.a, f.b);
-            return sku ? [{ sku, qtd: 1, grupo: null as Grupo | null }] : [];
-          })()
-        : pecasDaMontagem(s.m).map((i) => ({
-            sku: i.sku,
-            qtd: i.peca.qtd,
-            grupo: (i.peca.tipo.startsWith("espeto") ? "espeto" : i.peca.tipo) as Grupo,
-          }));
+    const itens = itensCarrinho();
     root
       .querySelectorAll<HTMLButtonElement>(".onb-comprar")
       .forEach((b) => (b.disabled = itens.length === 0));
@@ -394,33 +600,34 @@ function iniciar(root: HTMLElement) {
       const el = itens[i].grupo && root.querySelector(`[data-preco-grupo="${itens[i].grupo}"]`);
       if (el) el.textContent = brl(p!.valor * itens[i].qtd);
     });
-    mostrarTotal(
-      { valor: total, pix: pix < total ? pix : null, parcelas: null, prazo: precos[0]!.prazo },
-      null,
-    );
+    mostrarTotal({ valor: total, pix: pix < total ? pix : null }, null);
+    const prazo = precos.find((p) => p!.prazo)?.prazo;
+    if (prazo) $(".onb-prazo").textContent = `Produção: ${prazo.toLowerCase()} + frete`;
   }
 
-  function mostrarTotal(p: Preco | null, msg: string | null) {
+  function mostrarTotal(p: { valor: number; pix: number | null } | null, msg: string | null) {
     root.querySelectorAll(".onb-total").forEach((el) => {
       el.innerHTML = p
-        ? `<span class="v">${brl(p.valor)}</span><span class="d">${p.pix ? `${brl(p.pix)} no Pix · ` : ""}até 10x sem juros no cartão</span>`
+        ? `<span class="v">${brl(p.valor)}</span><span class="d">${p.pix ? `${brl(p.pix)} no Pix · ` : ""}até 10x sem juros</span>`
         : `<span class="v onb-pulso">${msg}</span>`;
     });
-    if (p?.prazo) $(".onb-prazo").textContent = `Produção: ${p.prazo.toLowerCase()} + frete`;
+    root
+      .querySelectorAll(".onb-barra-preco")
+      .forEach((el) => (el.textContent = p ? brl(p.valor) : ""));
   }
 
-  // ---------- comprar ----------
+  // preço dos acessórios nos cartões (uma consulta por acessório, guardada na visita)
+  (Object.keys(ACESSORIOS) as AccId[]).forEach((id) =>
+    preco(ACESSORIOS[id].sku).then((p) => {
+      if (!p) return;
+      root
+        .querySelectorAll(`[data-preco-acc="${id}"]`)
+        .forEach((el) => (el.textContent = brl(p.valor)));
+    }),
+  );
+
   async function comprar(btn: HTMLButtonElement) {
-    const f = faixaKit(s.a, s.b);
-    const nota = `Medida da churrasqueira: ${s.a}x${s.b} cm (LP Monte seu kit)`;
-    const itens =
-      s.modo === "kit" && f
-        ? [{ sku: skuKit(f.a, f.b)!, qtd: 1, anotacao: nota }]
-        : pecasDaMontagem(s.m).map((i, k) => ({
-            sku: i.sku,
-            qtd: i.peca.qtd,
-            anotacao: k === 0 ? nota : "",
-          }));
+    const itens = itensCarrinho();
     if (!itens.length) return;
     const original = btn.innerHTML;
     root.querySelectorAll<HTMLButtonElement>(".onb-comprar").forEach((b) => (b.disabled = true));
@@ -428,12 +635,14 @@ function iniciar(root: HTMLElement) {
     erro.hidden = true;
     try {
       btn.innerHTML = `Colocando no carrinho…`;
-      await adicionarAoCarrinho(itens);
+      await adicionarAoCarrinho(itens.map(({ sku, qtd, anotacao }) => ({ sku, qtd, anotacao })));
       rastrear("AddToCart", itens.length);
       btn.innerHTML = `No carrinho ✓`;
       irParaCarrinho();
     } catch (e) {
-      erro.innerHTML = `${esc((e as Error).message)} <a href="${WHATS}?text=${encodeURIComponent("Quero o kit para " + s.a + "x" + s.b + " cm")}" target="_blank" rel="noopener">Falar no WhatsApp</a>`;
+      erro.innerHTML = `${esc((e as Error).message)} <a href="${WHATS}?text=${encodeURIComponent(
+        `Quero o kit ${s.inst} para ${s.a}x${s.b} cm`,
+      )}" target="_blank" rel="noopener">Falar no WhatsApp</a>`;
       erro.hidden = false;
     } finally {
       setTimeout(() => {
@@ -452,12 +661,16 @@ function iniciar(root: HTMLElement) {
       w.dataLayer?.push({
         event: "onb_lp_" + evento.toLowerCase(),
         modo: s.modo,
+        instalacao: s.inst,
         medida: `${s.a}x${s.b}`,
       });
     } catch {
       /* rastreio nunca quebra a compra */
     }
   }
+
+  const irMontador = () =>
+    $("#onb-montador").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
 
   // ---------- eventos ----------
   let tMedida = 0;
@@ -483,8 +696,17 @@ function iniciar(root: HTMLElement) {
     const t = e.target as HTMLElement;
     const b = t.closest<HTMLButtonElement>("button");
     if (!b || b.disabled) return;
-    if (b.dataset.modo) definirModo(b.dataset.modo as Modo);
-    else if (b.dataset.modoIr) definirModo(b.dataset.modoIr as Modo);
+    if (b.dataset.modo) {
+      definirModo(b.dataset.modo as Modo);
+      if (!b.closest(".onb-painel")) irMontador();
+    } else if (b.dataset.modoIr) definirModo(b.dataset.modoIr as Modo);
+    else if (b.dataset.inst) {
+      definirInstalacao(b.dataset.inst as Instalacao);
+      if (b.hasAttribute("data-ir")) irMontador();
+    } else if (b.dataset.amb) {
+      s.amb = b.dataset.amb as Ambiente;
+      desenhar();
+    } else if (b.dataset.accToggle) alternarAcessorio(b.dataset.accToggle as AccId);
     else if (b.dataset.acao) alterar(b.dataset.grupo as Grupo, b.dataset.acao === "mais" ? 1 : -1);
     else if (b.dataset.campoSet) {
       const [g, k] = b.dataset.campoSet.split(".") as [Grupo, string];
@@ -494,7 +716,9 @@ function iniciar(root: HTMLElement) {
       s.m = montagemSugerida(s.a, s.b);
       desenhar();
     } else if (b.classList.contains("onb-comprar")) comprar(b);
+    else if (b.hasAttribute("data-ir-montador")) irMontador();
     else if (b.hasAttribute("data-reset")) stage?.resetView();
+    else if (b.hasAttribute("data-video")) tocarVideo(b);
     else if (b.hasAttribute("data-passo")) {
       const inp = root.querySelector<HTMLInputElement>(`input[name="${b.dataset.passo}"]`)!;
       inp.value = String(Number(inp.value) + Number(b.dataset.d));
@@ -512,21 +736,71 @@ function iniciar(root: HTMLElement) {
     if (!ok) return;
     if (inp.name === "a") s.a = v;
     else s.b = v;
+    const tipo = s.m.uruguaia.tipo;
     s.m = montagemSugerida(s.a, s.b);
+    s.m.uruguaia.tipo = tipo;
     if (s.modo === "kit" && !faixaKit(s.a, s.b)) s.modo = "pecas";
     desenhar();
   }
 
-  // dock de preço no celular: aparece quando o resumo do painel sai da tela
+  function tocarVideo(b: HTMLButtonElement) {
+    const v = document.createElement("video");
+    v.src = b.dataset.video!;
+    v.controls = true;
+    v.playsInline = true;
+    v.autoplay = true;
+    v.poster = b.dataset.poster ?? "";
+    v.className = "onb-video-tocando";
+    b.replaceWith(v);
+  }
+
+  // vídeo do cooktop: toca mudo (já tem legenda) só quando aparece na tela
+  const vCook = root.querySelector<HTMLVideoElement>(".onb-video-cooktop");
+  if (vCook && !reduced) {
+    new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) vCook.play().catch(() => {});
+        else vCook.pause();
+      },
+      { threshold: 0.4 },
+    ).observe(vCook);
+  }
+
+  // barra do produto (desktop) e dock (celular): aparecem depois do topo, somem no resumo
   const resumo = $(".onb-resumo");
   const dock = $(".onb-dock");
-  const ioDock = new IntersectionObserver(
-    ([e]) => dock.classList.toggle("on", !e.isIntersecting && e.boundingClientRect.top > 0),
-    {
-      threshold: 0,
-    },
-  );
-  ioDock.observe(resumo);
+  const barra = $(".onb-barra-produto");
+  const hero = $(".onb-hero");
+  let resumoVisivel = false;
+  let heroVisivel = true;
+  const atualizarBarras = () => {
+    dock.classList.toggle("on", !resumoVisivel && !heroVisivel);
+    barra.classList.toggle("on", !heroVisivel);
+  };
+  new IntersectionObserver(([e]) => {
+    resumoVisivel = e.isIntersecting;
+    atualizarBarras();
+  }).observe(resumo);
+  new IntersectionObserver(([e]) => {
+    heroVisivel = e.isIntersecting;
+    atualizarBarras();
+  }).observe(hero);
+
+  // dobras entram com um leve movimento (o conteúdo já está visível sem isso)
+  if (!reduced) {
+    const io = new IntersectionObserver(
+      (es) =>
+        es.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("visto");
+            io.unobserve(e.target);
+          }
+        }),
+      { rootMargin: "0px 0px -8% 0px" },
+    );
+    root.querySelectorAll(".onb-sobe").forEach((el) => io.observe(el));
+    root.classList.add("onb-anima");
+  }
 
   if (MODO_SIMULADO)
     root.insertAdjacentHTML(
@@ -556,91 +830,267 @@ function esqueleto(s: Estado) {
       <p class="onb-ajuda" id="onb-ajuda-${nome}">${ajuda}</p>
       <p class="onb-msg" id="onb-msg-${nome}" aria-live="polite"></p>
     </div>`;
+  const acc = (id: AccId, img: string, alt: string) => `
+    <button type="button" class="onb-acc" data-acc-toggle="${id}" aria-pressed="false">
+      ${foto(img, alt, 500, 500)}
+      <span class="onb-acc-txt"><strong>${ACC_INFO[id].titulo}</strong><small>${ACC_INFO[id].texto}</small></span>
+      <span class="onb-acc-pe"><span class="onb-acc-preco" data-preco-acc="${id}"></span><span class="onb-acc-acao">Adicionar ao kit</span></span>
+    </button>`;
+  const accCard = (
+    id: AccId,
+    img: string,
+    alt: string,
+    w: number,
+    h: number,
+    titulo: string,
+    texto: string,
+    largo = false,
+  ) => `
+    <article class="onb-acc-card${largo ? " onb-acc-largo" : ""} onb-sobe">
+      ${foto(img, alt, w, h)}
+      <div><h3>${titulo}</h3><p>${texto}</p>
+      <button type="button" class="onb-btn-sec" data-acc-toggle="${id}" aria-pressed="false"><span class="onb-acc-acao">Adicionar ao kit</span> <span class="onb-acc-preco" data-preco-acc="${id}"></span></button></div>
+    </article>`;
+
   return `
-  <section class="onb-hero">
-    <p class="onb-eyebrow">Kit Suporte Suspenso · Aço inox 304</p>
-    <h1>Monte seu kit.<br><span>Peça por peça.</span></h1>
-    <p class="onb-lede">Digite a medida da sua churrasqueira e veja cada grelha e espeto encaixar no lugar, antes de comprar.</p>
+  <div class="onb-barra-produto">
+    <div class="onb-barra-dentro">
+      <strong>Kit Premium</strong>
+      <span class="onb-barra-preco"></span>
+      <button type="button" class="onb-btn-pq" data-ir-montador>Montar o meu</button>
+    </div>
+  </div>
+
+  <section class="onb-hero onb-escuro" aria-label="Apresentação">
+    <div class="onb-dentro onb-hero-txt">
+      <p class="onb-eyebrow">Kit Premium Olho na Brasa</p>
+      <h1>A melhor churrasqueira começa por dentro.</h1>
+      <p class="onb-lede">Suporte suspenso ou cooktop em aço inox 304 espelhado, feito na medida exata da sua churrasqueira. Para quem ama assar carne e não aceita menos que o melhor.</p>
+      <div class="onb-ctas">
+        <button type="button" class="onb-btn" data-ir-montador>Monte o seu em 3D</button>
+        <a class="onb-btn-link" href="#onb-formas">Suspenso ou cooktop? ›</a>
+      </div>
+    </div>
+    <figure class="onb-hero-foto">${foto("cooktop-showroom", "Kit cooktop em inox espelhado instalado em bancada de granito, com grelhas, espetos e gaveta", 1600, 1600, "", true)}</figure>
+    <ul class="onb-fatos onb-dentro">
+      <li><b>304</b><span>aço inox alimentício</span></li>
+      <li><b>15 anos</b><span>de garantia por escrito</span></li>
+      <li><b>3 níveis</b><span>de brasa no mesmo suporte</span></li>
+      <li><b>100 mil+</b><span>churrasqueiras entregues</span></li>
+    </ul>
   </section>
 
-  <section class="onb-builder" aria-label="Montador do kit">
-    <div class="onb-stage">
-      <canvas role="img" aria-label="Kit em 3D"></canvas>
-      <div class="onb-fallback" aria-hidden="true"></div>
-      <div class="onb-hotspots"></div>
-      <div class="onb-pop" role="dialog" aria-label="Peça escolhida" hidden></div>
-      <div class="onb-carregando" aria-hidden="true"><i></i></div>
-      <div class="onb-barra">
-        <span class="onb-dica">Arraste para girar · toque nas peças</span>
-        <button type="button" data-reset>Ver de frente</button>
-      </div>
-      <code class="onb-fps"></code>
-    </div>
-
-    <div class="onb-painel">
-      <div class="onb-passo">
-        <h2><span>1</span> Medida da sua churrasqueira</h2>
-        <div class="onb-campos">
-          ${campo("a", "Largura da boca", "De parede a parede, por dentro.", A_MIN, A_MAX, s.a)}
-          ${campo("b", "Profundidade", "Da boca até a parede do fundo.", B_MIN, B_MAX, s.b)}
-        </div>
-        <details class="onb-como">
-          <summary>Como medir</summary>
-          <svg viewBox="0 0 240 120" role="img" aria-label="Churrasqueira vista de cima: a largura vai de parede a parede e a profundidade da boca até o fundo">
-            <rect x="40" y="16" width="160" height="88" rx="4" fill="none" stroke="currentColor" stroke-width="6"/>
-            <path d="M46 60h148" stroke="var(--onb-laranja)" stroke-width="2" marker-start="url(#onb-s)" marker-end="url(#onb-s)"/>
-            <path d="M120 22v76" stroke="var(--onb-laranja)" stroke-width="2" stroke-dasharray="4 3"/>
-            <text x="120" y="54" text-anchor="middle" font-size="11" fill="currentColor">largura</text>
-            <text x="126" y="92" font-size="11" fill="currentColor">profundidade</text>
-            <text x="120" y="118" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">boca (frente)</text>
-            <defs><marker id="onb-s" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="6" markerHeight="6" orient="auto"><circle cx="3" cy="3" r="2.5" fill="var(--onb-laranja)"/></marker></defs>
-          </svg>
-        </details>
-      </div>
-
-      <div class="onb-passo">
-        <h2><span>2</span> Como você quer montar?</h2>
-        <div class="onb-modos" role="group" aria-label="Forma de montar">
-          <button type="button" data-modo="kit" aria-pressed="${s.modo === "kit"}"><strong>Kit completo</strong><small>Tudo calculado pela fábrica para a sua medida</small></button>
-          <button type="button" data-modo="pecas" aria-pressed="${s.modo === "pecas"}"><strong>Peça por peça</strong><small>Escolha o que entra, toque no 3D para adicionar</small></button>
-        </div>
-        <p class="onb-faixa"></p>
-      </div>
-
-      <div class="onb-passo">
-        <h2><span>3</span> O que vai no seu kit</h2>
-        <div id="onb-conteudo"></div>
-      </div>
-
-      <div class="onb-passo onb-resumo">
-        <div class="onb-total" aria-live="polite"></div>
-        <p class="onb-prazo"></p>
-        <button type="button" class="onb-comprar">Comprar agora</button>
-        <p class="onb-erro" role="alert" hidden></p>
-        <ul class="onb-garantias">
-          <li>Frete calculado com o seu CEP no carrinho</li>
-          <li>Pix, boleto ou cartão em até 10x — checkout seguro da loja</li>
-          <li>Inox 304 alimentício · 15 anos de garantia</li>
-        </ul>
+  <section class="onb-formas onb-claro" id="onb-formas" aria-labelledby="onb-formas-t">
+    <div class="onb-dentro">
+      <h2 id="onb-formas-t" class="onb-sobe">Suspenso ou cooktop.<br><span>Do jeito da sua churrasqueira.</span></h2>
+      <div class="onb-formas-grade">
+        <article class="onb-forma onb-sobe">
+          <div class="onb-forma-midia">${foto("nicho-lateral", "Kit suspenso fixado no fundo de uma churrasqueira de mármore com abertura lateral de vidro", 1280, 960)}</div>
+          <div class="onb-forma-txt">
+            <h3>Suspenso.</h3>
+            <p>Parafusado na parede do fundo. A boca fica livre e tudo trabalha em três alturas de brasa.</p>
+            <button type="button" class="onb-btn-sec" data-inst="suspenso" data-ir>Montar suspenso</button>
+          </div>
+        </article>
+        <article class="onb-forma onb-forma-destaque onb-sobe">
+          <span class="onb-selo">O mais pedido</span>
+          <div class="onb-forma-midia">
+            <video class="onb-video-cooktop" src="${IMG}cooktop-rodrigo.mp4" poster="${IMG}cooktop-rodrigo.webp" muted loop playsinline preload="none" aria-label="Rodrigo, da Olho na Brasa, apresenta o suporte com encaixe cooktop"></video>
+          </div>
+          <div class="onb-forma-txt">
+            <h3>Cooktop.</h3>
+            <p>Encaixa na bancada, em volta do braseiro. Para quem não quer furar o fundo da churrasqueira, seja granito ou inox.</p>
+            <button type="button" class="onb-btn-sec" data-inst="cooktop" data-ir>Montar cooktop</button>
+          </div>
+        </article>
       </div>
     </div>
   </section>
 
-  <section class="onb-porque" aria-label="Por que Olho na Brasa">
-    <article><h3>Sob medida de verdade</h3><p>Cada peça sai na medida da sua churrasqueira. Nada de grelha sobrando ou faltando.</p></article>
-    <article><h3>Inox 304 espelhado</h3><p>O mesmo aço de cozinha industrial. Não enferruja, não solta gosto, limpa com água e sabão.</p></article>
-    <article><h3>Direto da fábrica</h3><p>Feito em Santa Catarina por quem fabrica, com 15 anos de garantia.</p></article>
+  <section class="onb-montador onb-claro" id="onb-montador" aria-labelledby="onb-montador-t">
+    <div class="onb-dentro onb-montador-topo">
+      <h2 id="onb-montador-t">Monte o seu.<br><span>Veja antes de comprar.</span></h2>
+    </div>
+    <div class="onb-builder">
+      <div class="onb-stage">
+        <canvas role="img" aria-label="Kit em 3D"></canvas>
+        <div class="onb-fallback" aria-hidden="true"></div>
+        <div class="onb-hotspots"></div>
+        <div class="onb-pop" role="dialog" aria-label="Peça escolhida" hidden></div>
+        <div class="onb-carregando" aria-hidden="true"><i></i></div>
+        <span class="onb-etiqueta-palco"></span>
+        <div class="onb-barra">
+          <span class="onb-dica">Arraste para girar · toque nas peças</span>
+          <button type="button" data-reset>Ver de frente</button>
+        </div>
+        <code class="onb-fps"></code>
+      </div>
+
+      <div class="onb-painel">
+        <div class="onb-passo">
+          <h3 class="onb-passo-t"><span>1</span> Como vai instalar?</h3>
+          <div class="onb-modos" role="group" aria-label="Instalação">
+            <button type="button" data-inst="suspenso" aria-pressed="${s.inst === "suspenso"}"><strong>Suspenso</strong><small>Parafusado no fundo da churrasqueira</small></button>
+            <button type="button" data-inst="cooktop" aria-pressed="${s.inst === "cooktop"}"><strong>Cooktop</strong><small>Apoia na bancada, sem furar</small></button>
+          </div>
+        </div>
+
+        <div class="onb-passo">
+          <h3 class="onb-passo-t"><span>2</span> Como é a sua churrasqueira?</h3>
+          <div class="onb-chips" role="group" aria-label="Tipo de churrasqueira">
+            ${AMBIENTES.map((a) => `<button type="button" data-amb="${a.id}" aria-pressed="${s.amb === a.id}"><strong>${a.nome}</strong><small>${a.sub}</small></button>`).join("")}
+          </div>
+          <p class="onb-ajuda">Só para você ver o kit no lugar. O preço não muda.</p>
+        </div>
+
+        <div class="onb-passo">
+          <h3 class="onb-passo-t"><span>3</span> Medidas da boca</h3>
+          <div class="onb-campos">
+            ${campo("a", "Largura (A)", "De parede a parede, por dentro.", A_MIN, A_MAX, s.a)}
+            ${campo("b", "Comprimento (B)", "Da boca até a parede do fundo.", B_MIN, B_MAX, s.b)}
+          </div>
+          <details class="onb-como">
+            <summary>Como medir</summary>
+            ${foto("como-medir", "Churrasqueira com a largura da boca marcada como A e o comprimento interno como B", 500, 500)}
+            <p class="onb-ajuda">Depois da compra, nosso time de projeto confirma as medidas finas com você.</p>
+          </details>
+        </div>
+
+        <div class="onb-passo">
+          <h3 class="onb-passo-t"><span>4</span> Kit completo ou peça por peça?</h3>
+          <div class="onb-modos" role="group" aria-label="Forma de montar">
+            <button type="button" data-modo="kit" aria-pressed="${s.modo === "kit"}"><strong>Kit completo</strong><small>Tudo calculado pela fábrica</small></button>
+            <button type="button" data-modo="pecas" aria-pressed="${s.modo === "pecas"}"><strong>Peça por peça</strong><small>Toque no 3D para adicionar</small></button>
+          </div>
+          <p class="onb-faixa"></p>
+          <div id="onb-conteudo"></div>
+        </div>
+
+        <div class="onb-passo">
+          <h3 class="onb-passo-t"><span>5</span> Acessórios</h3>
+          <div class="onb-acc-lista">
+            ${acc("giratorio", "kit-giratorio", "Kit espeto giratório com motor")}
+            ${acc("cesto", "cesto-miudos", "Cesto de miúdos em inox")}
+            ${acc("bandeja", "bandeja-coracao", "Bandeja de coração perfurada no espeto")}
+          </div>
+        </div>
+
+        <div class="onb-passo onb-resumo">
+          <div class="onb-total" aria-live="polite"></div>
+          <p class="onb-prazo"></p>
+          <button type="button" class="onb-comprar">Comprar agora</button>
+          <p class="onb-erro" role="alert" hidden></p>
+          <ul class="onb-garantias">
+            <li>Frete calculado com o seu CEP no carrinho</li>
+            <li>Pix, boleto ou cartão em até 10x</li>
+            <li>15 anos de garantia</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section class="onb-faq" aria-label="Perguntas frequentes">
-    <h2>Perguntas rápidas</h2>
-    <details><summary>Precisa de obra para instalar?</summary><p>Não. O suporte fixa na parede interna da churrasqueira com os pés e parafusos que vão junto.</p></details>
-    <details><summary>Minha medida não é redonda. E agora?</summary><p>O kit é feito em faixas de 5 em 5 cm e sempre arredonda para baixo, para caber com folga. A sua medida exata vai junto no pedido.</p></details>
-    <details><summary>Já tenho suporte, posso comprar só grelhas?</summary><p>Pode. Em "Peça por peça", desmarque o suporte e escolha só o que falta.</p></details>
-    <details><summary>Como fica o frete?</summary><p>Você vê o valor e o prazo no carrinho, com o seu CEP, antes de pagar.</p></details>
+  <section class="onb-espelho onb-escuro" aria-labelledby="onb-espelho-t">
+    <figure class="onb-espelho-foto">${foto("espeto-cabo", "Cabo de espeto em inox polido refletindo a luz", 1200, 800)}</figure>
+    <div class="onb-dentro onb-espelho-txt onb-sobe">
+      <p class="onb-eyebrow">Inox 304 alimentício</p>
+      <h2 id="onb-espelho-t">Espelhado.<br><span>Por dentro e por fora.</span></h2>
+      <p>Polido até refletir. Não enferruja, não passa gosto para a carne e sai limpo com água e sabão.</p>
+    </div>
   </section>
 
-  <div class="onb-dock" aria-hidden="false">
+  <section class="onb-etapas onb-escuro" aria-labelledby="onb-etapas-t">
+    <div class="onb-dentro">
+      <h2 id="onb-etapas-t" class="onb-sobe">Sete etapas.<br><span>Nenhum atalho.</span></h2>
+      <ol class="onb-etapas-lista">
+        <li class="onb-sobe"><b>Corte</b><span>Chapa e tubo de inox 304 cortados na sua medida.</span></li>
+        <li class="onb-sobe"><b>Dobra</b><span>Cada aba no ângulo certo para o encaixe.</span></li>
+        <li class="onb-sobe"><b>Solda</b><span>Feita à mão, contínua, sem ponto de ferrugem.</span></li>
+        <li class="onb-sobe"><b>Rebarba</b><span>Nenhuma aresta que corte a mão ou prenda a carne.</span></li>
+        <li class="onb-sobe"><b>Polimento</b><span>Até espelhar, peça por peça.</span></li>
+        <li class="onb-sobe"><b>Conferência</b><span>Medida e encaixe testados antes de sair.</span></li>
+        <li class="onb-sobe"><b>Embalagem</b><span>Protegida para chegar como saiu da fábrica.</span></li>
+      </ol>
+      <p class="onb-local">Fabricado em Itapema, Santa Catarina.</p>
+    </div>
+  </section>
+
+  <section class="onb-garantia onb-escuro" aria-labelledby="onb-garantia-t">
+    <div class="onb-dentro onb-sobe">
+      <p class="onb-garantia-num" aria-hidden="true">15</p>
+      <h2 id="onb-garantia-t">Anos de garantia.<br><span>Por escrito.</span></h2>
+      <p>Porque a gente sabe o que fabrica, e responde por cada solda e cada encaixe.</p>
+    </div>
+  </section>
+
+  <section class="onb-acessorios onb-claro" aria-labelledby="onb-acc-t">
+    <div class="onb-dentro">
+      <h2 id="onb-acc-t" class="onb-sobe">Para quem leva<br><span>o churrasco a sério.</span></h2>
+      <div class="onb-acc-grade">
+        ${accCard("giratorio", "cooktop-giratorio", "Cesto de miúdos girando com motor sobre a brasa, em kit cooktop de inox", 1200, 1600, "Espeto giratório com motor.", "Liga, encaixa e esquece. Gira no ponto da brasa enquanto você cuida do resto. Vem com o cesto de miúdos.", true)}
+        ${accCard("cesto", "cesto-coracao", "Cesto de miúdos aberto, cheio de corações temperados", 500, 500, "Cesto de miúdos.", "Coração e linguicinha assando por igual, sem cair na brasa.")}
+        ${accCard("bandeja", "bandeja-coracao", "Bandeja perfurada de inox presa a um espeto de duas pontas", 500, 500, "Bandeja de coração.", "Chapa perfurada no espeto. Dourado por fora, suculento por dentro.")}
+        <article class="onb-acc-card onb-sobe">
+          ${foto("argentina-detalhe", "Grelha argentina de canaletas em inox espelhado", 500, 333)}
+          <div><h3>Grelha argentina.</h3><p>Canaletas inclinadas levam a gordura para fora da brasa. Menos labareda, menos fuligem na carne.</p>
+          <button type="button" class="onb-btn-sec" data-modo="pecas">Escolher no montador</button></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="onb-projetos onb-escuro" aria-labelledby="onb-proj-t">
+    <div class="onb-dentro">
+      <h2 id="onb-proj-t" class="onb-sobe">Projetos que viram<br><span>assunto no churrasco.</span></h2>
+      <div class="onb-galeria">
+        <figure class="onb-g1 onb-sobe">${foto("nicho-gourmet", "Kit cooktop em nicho de granito preto com painel de inox, em cozinha gourmet de madeira", 1600, 1067)}</figure>
+        <figure class="onb-g2 onb-sobe">${foto("nicho-lateral", "Kit suspenso em churrasqueira de mármore com lateral de vidro", 1280, 960)}</figure>
+        <figure class="onb-g3 onb-sobe">${foto("espeto-mesa", "Espeto de inox sobre bancada de madeira no showroom", 1200, 800)}</figure>
+      </div>
+      <h3 class="onb-videos-t">Quem já tem, mostra.</h3>
+      <div class="onb-videos">
+        ${VIDEOS.map(
+          ([v, p, legenda]) =>
+            `<figure><button type="button" class="onb-video" data-video="${VIDEOS_CLIENTE}${v}" data-poster="${VIDEOS_CLIENTE}${p}" aria-label="Assistir: ${legenda}"><img src="${VIDEOS_CLIENTE}${p}" alt="" loading="lazy" decoding="async" width="360" height="640"><span class="onb-play" aria-hidden="true"></span></button><figcaption>${legenda}</figcaption></figure>`,
+        ).join("")}
+      </div>
+    </div>
+  </section>
+
+  <section class="onb-reviews onb-claro" aria-labelledby="onb-rev-t">
+    <div class="onb-dentro">
+      <h2 id="onb-rev-t" class="onb-sobe">4,7 no Google.<br><span>41 avaliações.</span></h2>
+      <div class="onb-rev-grade">
+        ${REVIEWS.map((r) => `<blockquote class="onb-sobe"><p>“${r.quote}”</p><cite>${r.author}</cite></blockquote>`).join("")}
+      </div>
+      <a class="onb-btn-link" href="${MAPS}" target="_blank" rel="noopener">Ver todas no Google Maps ›</a>
+    </div>
+  </section>
+
+  <section class="onb-faq onb-claro" aria-labelledby="onb-faq-t">
+    <div class="onb-dentro onb-estreito">
+      <h2 id="onb-faq-t">Perguntas rápidas.</h2>
+      <details><summary>Qual a diferença entre suspenso e cooktop?</summary><p>O suspenso é parafusado na parede do fundo e deixa a boca livre. O cooktop apoia na bancada, em volta do braseiro, e não precisa furar nada. Grelhas e espetos são os mesmos.</p></details>
+      <details><summary>Precisa de obra para instalar?</summary><p>Não. O suspenso vai com pés e parafusos; o cooktop só encaixa.</p></details>
+      <details><summary>Minha medida não é redonda. E agora?</summary><p>O kit é feito em faixas de 5 em 5 cm e arredonda para baixo, para caber com folga. A sua medida exata vai no pedido e o time de projeto confirma com você.</p></details>
+      <details><summary>Já tenho suporte. Posso comprar só grelhas?</summary><p>Pode. Em "Peça por peça", desmarque o suporte e escolha só o que falta.</p></details>
+      <details><summary>Como fica o frete?</summary><p>Você vê valor e prazo no carrinho, com o seu CEP, antes de pagar.</p></details>
+    </div>
+  </section>
+
+  <section class="onb-final onb-escuro" aria-labelledby="onb-final-t">
+    <figure class="onb-final-foto" aria-hidden="true">${foto("nicho-gourmet", "", 1600, 1067)}</figure>
+    <div class="onb-dentro onb-final-txt onb-sobe">
+      <h2 id="onb-final-t">Sua churrasqueira merece.</h2>
+      <p>Monte o seu em 3D, na medida certa, e receba pronto para o primeiro fogo.</p>
+      <div class="onb-ctas">
+        <button type="button" class="onb-btn" data-ir-montador>Montar meu kit</button>
+        <a class="onb-btn-link" href="${WHATS}" target="_blank" rel="noopener">Falar com a fábrica ›</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="onb-dock">
     <div class="onb-total"></div>
     <button type="button" class="onb-comprar">Comprar</button>
   </div>`;

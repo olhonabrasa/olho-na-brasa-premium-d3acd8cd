@@ -15,11 +15,12 @@ import {
   type Peca,
 } from "./catalog";
 
+export type GrelhaTipo = "uruguaia" | "argentina";
 export type EspetoTipo = "espeto_duplo" | "espeto_chata" | "espeto_v";
 
 export type Montagem = {
   suporte: { on: boolean; larguraCm: number };
-  uruguaia: { qtd: number; larguraCm: number; comprimentoCm: number };
+  uruguaia: { qtd: number; larguraCm: number; comprimentoCm: number; tipo: GrelhaTipo };
   descanso: { qtd: number; larguraCm: number };
   espeto: { qtd: number; tipo: EspetoTipo; comprimentoCm: number };
 };
@@ -67,7 +68,7 @@ export function montagemSugerida(a: number, b: number): Montagem {
   const comp = clamp(comprimentoGrelhaCm(clamp(floor5(b), 40, 70)), 35, 55);
   return {
     suporte: { on: true, larguraCm: s },
-    uruguaia: { qtd: 2, larguraCm: g.uruguaia, comprimentoCm: comp },
+    uruguaia: { qtd: 2, larguraCm: g.uruguaia, comprimentoCm: comp, tipo: "uruguaia" },
     descanso: { qtd: g.descansoQtd, larguraCm: g.descanso },
     espeto: {
       qtd: 2,
@@ -190,7 +191,7 @@ export function pecasDaMontagem(m: Montagem): ItemResumo[] {
   if (m.suporte.on) lista.push({ tipo: "suporte", larguraCm: m.suporte.larguraCm, qtd: 1 });
   if (m.uruguaia.qtd)
     lista.push({
-      tipo: "uruguaia",
+      tipo: m.uruguaia.tipo,
       larguraCm: m.uruguaia.larguraCm,
       comprimentoCm: m.uruguaia.comprimentoCm,
       qtd: m.uruguaia.qtd,
@@ -206,7 +207,7 @@ export function pecasDaMontagem(m: Montagem): ItemResumo[] {
 }
 
 /** O que vem no Kit Premium da faixa (para a lista "vem no kit"). */
-export function conteudoKit(c: Composicao) {
+export function conteudoKit(c: Composicao, cooktop = false) {
   const l = [`Suporte suspenso ${c.suporteLarguraCm} cm · 3 níveis`];
   l.push(
     `${c.uruguaia.quantidade} grelhas uruguaias ${c.uruguaia.larguraCm}×${c.uruguaia.comprimentoCm} cm`,
@@ -216,7 +217,11 @@ export function conteudoKit(c: Composicao) {
       `${c.descanso.quantidade} ${c.descanso.quantidade > 1 ? "grelhas" : "grelha"} de descanso ${c.descanso.larguraCm} cm`,
     );
   l.push(`${c.espetos.quantidade} espetos duplos ${c.espetos.comprimentoCm} cm`);
-  l.push(`Pés de fixação ${c.peCm} cm, parafusos inclusos`);
+  l.push(
+    cooktop
+      ? "Encaixe cooktop: apoia na bancada, sem furar a parede"
+      : `Pés de fixação ${c.peCm} cm, parafusos inclusos`,
+  );
   return l;
 }
 

@@ -14,6 +14,18 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Composicao } from "@/lib/kitComposition";
 import { ambienteEstudio, buildKit, criarMateriais } from "@/components/checkout/kit3d/geometry";
 import logoSvg from "../../public/3d/logo-olho-na-brasa.svg?raw";
+import {
+  bandejaCoracao,
+  baseCooktop,
+  cestoMiudos,
+  criarAmbiente,
+  criarMateriaisCena,
+  grelhaArgentina,
+  posicionarAcessorio,
+  type Acessorios,
+  type Ambiente,
+  type Instalacao,
+} from "./cena3d";
 
 export type StageOptions = {
   mobile: boolean;
@@ -27,7 +39,16 @@ export type StageOptions = {
   onRender?: () => void;
 };
 
-export type UpdateOptions = { fantasma?: string[]; destaque?: string | null };
+export type UpdateOptions = {
+  fantasma?: string[];
+  destaque?: string | null;
+  instalacao?: Instalacao;
+  ambiente?: Ambiente;
+  grelha?: "uruguaia" | "argentina";
+  acessorios?: Acessorios;
+  /** boca da churrasqueira em cm, para desenhar o cenário */
+  boca?: { a: number; b: number };
+};
 
 export type BuilderStage = {
   update: (c: Composicao, o?: UpdateOptions) => void;
@@ -41,6 +62,7 @@ export type BuilderStage = {
 };
 
 const ENV_ROTATION_Y = -2.3;
+const ENV_FRENTE = 1.6;
 const ENTRADA_MS = 520;
 
 export function createBuilderStage(
@@ -101,6 +123,9 @@ export function createBuilderStage(
 
   const logoUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(logoSvg);
   const mats = criarMateriais({ mobile: opts.mobile }, logoUrl);
+  const cenaMat = criarMateriaisCena(mats.inox);
+  let ambiente: THREE.Group | null = null;
+  let chaveAmbiente = "";
   const fantasmaMat = new THREE.MeshStandardMaterial({
     name: "fantasma",
     color: 0xbfc5cc,
@@ -205,16 +230,22 @@ export function createBuilderStage(
     ground.position.y = box.min.y;
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     // enquadra pela menor dimensão do canvas (no celular o palco é mais estreito que alto)
+    // com a churrasqueira em volta, a câmera recua um pouco para mostrar o contexto
     const dist =
       (sphere.radius / (Math.tan((camera.fov * Math.PI) / 360) * Math.min(1, camera.aspect))) *
-      1.05;
+      (ambiente?.children.length ? 0.98 : 1.05);
     controls.minDistance = dist * 0.45;
     controls.maxDistance = dist * 2.2;
     // só reenquadra quando o tamanho muda de verdade (trocar suporte), não a cada grelha
     const mudou = Math.abs(sphere.radius - raioAntes) / (raioAntes || 1) > 0.15;
     raioAntes = sphere.radius;
     if (!framedOnce || (!manterCamera && mudou)) {
-      const dir = new THREE.Vector3(1, 0.55, 1.25).normalize();
+      // com churrasqueira, de frente para a boca (como o cliente vê a dele); sem, 3/4 de estúdio
+      const dir = (
+        ambiente?.children.length
+          ? new THREE.Vector3(0.42, 0.42, 1.35)
+          : new THREE.Vector3(1, 0.55, 1.25)
+      ).normalize();
       camera.position.copy(sphere.center).add(dir.multiplyScalar(dist));
     }
     camera.near = Math.max(dist / 100, 0.005);
@@ -228,6 +259,38 @@ export function createBuilderStage(
     key.target.position.copy(sphere.center);
     key.target.updateMatrixWorld();
     framedOnce = true;
+  }
+
+  function montarAmbiente(o: UpdateOptions, c: Composicao) {
+    const tipo = o.ambiente ?? "estudio";
+    const a = (o.boca?.a ?? c.suporteLarguraCm) / 100;
+    const b = (o.boca?.b ?? 60) / 100;
+    const chave = [tipo, o.instalacao, a, b, c.peCm, c.suporteLarguraCm].join("|");
+    if (chave === chaveAmbiente) return;
+    chaveAmbiente = chave;
+    if (ambiente) {
+      scene.remove(ambiente);
+      ambiente.traverse((m) => m instanceof THREE.Mesh && m.geometry.dispose());
+    }
+    ambiente = criarAmbiente(cenaMat, {
+      tipo,
+      instalacao: o.instalacao ?? "suspenso",
+      a,
+      b,
+      peM: c.peCm / 100,
+      suporteM: c.suporteLarguraCm / 100,
+    });
+    ambiente.traverse((m) => {
+      if (m instanceof THREE.Mesh) {
+        m.castShadow = false;
+        m.receiveShadow = true;
+      }
+    });
+    scene.add(ambiente);
+    ground.visible = tipo === "estudio";
+    // a câmera vai de frente com churrasqueira: o reflexo do estúdio gira junto,
+    // para a softbox continuar caindo no inox
+    scene.environmentRotation.y = ENV_ROTATION_Y + (tipo === "estudio" ? 0 : ENV_FRENTE);
   }
 
   function disposeKit() {
@@ -327,6 +390,42 @@ export function createBuilderStage(
   return {
     update(c, o = {}) {
       const novo = buildKit(c, mats, { mobile: opts.mobile });
+      const cooktop = o.instalacao === "cooktop";
+      const W = c.suporteLarguraCm / 100;
+      // cooktop: o suporte apoia na base, sem os pés de parafusar na parede
+      if (cooktop) {
+        const sup = novo.getObjectByName("suporte");
+        const pes: THREE.Object3D[] = [];
+        sup?.traverse((m) => /^pe_/.test(m.name) && pes.push(m));
+        pes.forEach((m) => m.removeFromParent());
+        novo.add(baseCooktop(cenaMat, W, (o.boca?.b ?? 60) / 100));
+      }
+      if (o.grelha === "argentina") {
+        for (const g of novo.children.filter((x) => x.name.startsWith("grelha_uruguaia_"))) {
+          const arg = grelhaArgentina(
+            cenaMat,
+            c.uruguaia.larguraCm / 100,
+            c.uruguaia.comprimentoCm / 100,
+            Number(g.name.split("_").pop()),
+          );
+          arg.position.copy(g.position);
+          novo.remove(g);
+          novo.add(arg);
+        }
+      }
+      const acc = o.acessorios;
+      const meioOcupado = c.uruguaia.quantidade > c.uruguaia.porNivel;
+      if (acc?.giratorio || acc?.cesto) {
+        const cesto = cestoMiudos(cenaMat, !!acc.giratorio);
+        posicionarAcessorio(cesto, W, 1, meioOcupado);
+        novo.add(cesto);
+      }
+      if (acc?.bandeja) {
+        const b = bandejaCoracao(cenaMat);
+        posicionarAcessorio(b, W, -1, meioOcupado);
+        novo.add(b);
+      }
+      montarAmbiente(o, c);
       novo.updateMatrixWorld(true);
       const pecas = novo.children.slice().map(unirPeca);
       disposeKit();
@@ -404,6 +503,11 @@ export function createBuilderStage(
         m.dispose();
       });
       acesos.forEach((m) => m.dispose());
+      cenaMat.texturas.forEach((t) => t.dispose());
+      Object.values(cenaMat).forEach(
+        (m) => m instanceof THREE.Material && m !== mats.inox && m.dispose(),
+      );
+      ambiente?.traverse((m) => m instanceof THREE.Mesh && m.geometry.dispose());
       fantasmaMat.dispose();
       scene.environment?.dispose();
       ground.geometry.dispose();

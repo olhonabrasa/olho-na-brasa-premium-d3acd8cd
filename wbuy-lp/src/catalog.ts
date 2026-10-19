@@ -85,6 +85,7 @@ const URUGUAIA: Record<number, Record<number, number>> = {
 export type PecaTipo =
   | "suporte"
   | "uruguaia"
+  | "argentina"
   | "descanso"
   | "espeto_duplo"
   | "espeto_chata"
@@ -93,6 +94,7 @@ export type PecaTipo =
 export const NOMES: Record<PecaTipo, string> = {
   suporte: "Suporte suspenso",
   uruguaia: "Grelha uruguaia",
+  argentina: "Grelha argentina",
   descanso: "Grelha de descanso",
   espeto_duplo: "Espeto duplo",
   espeto_chata: "Espeto barra chata",
@@ -137,6 +139,11 @@ export function skuPeca(p: Peca): string | null {
       return ESPETO[p.larguraCm] ? `4894682.100851.0.${ESPETO[p.larguraCm]}` : null;
     case "espeto_v":
       return ESPETO[p.larguraCm] ? `4896947.100851.0.${ESPETO[p.larguraCm]}` : null;
+    case "argentina": {
+      // mesma grade de medidas da uruguaia (a loja não tem a 22×35 na argentina)
+      const v = URUGUAIA[p.larguraCm]?.[p.comprimentoCm ?? 0];
+      return v && v !== 453587 ? `5751982.100848.0.${v}` : null;
+    }
     case "uruguaia": {
       const v = URUGUAIA[p.larguraCm]?.[p.comprimentoCm ?? 0];
       return v ? `5047524.100848.0.${v}` : null;
@@ -159,6 +166,24 @@ export function encaixarAcima(lista: number[], v: number) {
 }
 
 export function descreverPeca(p: Peca) {
-  if (p.tipo === "uruguaia") return `${NOMES.uruguaia} ${p.larguraCm}×${p.comprimentoCm} cm`;
+  if (p.tipo === "uruguaia" || p.tipo === "argentina")
+    return `${NOMES[p.tipo]} ${p.larguraCm}×${p.comprimentoCm} cm`;
   return `${NOMES[p.tipo]} ${p.larguraCm} cm`;
 }
+
+/** Acessórios vendidos prontos (um SKU só, sem medida). */
+export const ACESSORIOS = {
+  cesto: { sku: "5772953.101891.0", nome: "Cesto de miúdos", img: "cesto-miudos" },
+  giratorio: {
+    sku: "5798902.365218.0",
+    nome: "Espeto giratório com motor + cesto de miúdos",
+    img: "kit-giratorio",
+  },
+  bandeja: { sku: "5126259.101891.0", nome: "Bandeja de coração", img: "bandeja-coracao" },
+} as const;
+
+/**
+ * Encaixe cooktop ("Suporte suspenso Cooktop", produto 5214745 no painel).
+ * CONFIRMAR com a fábrica: aqui ele entra como adicional ao suporte/kit escolhido.
+ */
+export const COOKTOP_SKU = "5214745.101891.0";

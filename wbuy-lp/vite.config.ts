@@ -1,12 +1,25 @@
 // Build da LP de campanha da Wbuy: um módulo ES (kit-builder.js) + o pedaço do
 // three.js carregado sob demanda. Sai em public/wbuy-lp/, servido por
 // premium.olhonabrasa.com.br/wbuy-lp/ junto com os HDRIs de public/3d/.
+import { cpSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 
 const raiz = fileURLToPath(new URL(".", import.meta.url));
 
+const fotos = fileURLToPath(new URL("./public-img", import.meta.url));
+const saida = fileURLToPath(new URL("../public/wbuy-lp", import.meta.url));
+
 export default defineConfig({
+  plugins: [
+    {
+      // fotos e vídeo da LP vão junto, em public/wbuy-lp/img/
+      name: "copiar-fotos",
+      closeBundle() {
+        cpSync(fotos, saida + "/img", { recursive: true });
+      },
+    },
+  ],
   root: raiz,
   publicDir: fileURLToPath(new URL("../public", import.meta.url)),
   resolve: { alias: { "@": fileURLToPath(new URL("../src", import.meta.url)) } },

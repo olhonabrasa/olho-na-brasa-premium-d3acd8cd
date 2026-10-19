@@ -11,7 +11,8 @@ export type Preco = {
   prazo: string | null;
 };
 
-const NA_LOJA = /(^|\.)olhonabrasa\.com\.br$/.test(location.hostname);
+// loja final e a prévia da Wbuy (olhonabrasa.lojawbuy.com.br): mesma plataforma, mesmo carrinho
+const NA_LOJA = /(^|\.)olhonabrasa\.(com\.br|lojawbuy\.com\.br)$/.test(location.hostname);
 export const MODO_SIMULADO = !NA_LOJA;
 
 type JQ = {
