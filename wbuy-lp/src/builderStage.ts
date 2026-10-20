@@ -12,13 +12,24 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Composicao } from "@/lib/kitComposition";
-import { ambienteEstudio, buildKit, criarMateriais } from "@/components/checkout/kit3d/geometry";
+import {
+  ambienteEstudio,
+  buildKit,
+  criarMateriais,
+  espetoPeca,
+  grelhaUruguaia,
+} from "@/components/checkout/kit3d/geometry";
 import logoSvg from "../../public/3d/logo-olho-na-brasa.svg?raw";
 import {
   bandejaCoracao,
   baseCooktop,
   cestoMiudos,
   criarAmbiente,
+  criarSetas,
+  defumador,
+  espetoGiratorio,
+  medidasGeo,
+  posicionarDefumador,
   criarMateriaisCena,
   grelhaArgentina,
   posicionarAcessorio,
@@ -45,6 +56,12 @@ export type UpdateOptions = {
   instalacao?: Instalacao;
   ambiente?: Ambiente;
   grelha?: "uruguaia" | "argentina";
+  /** uma entrada por grelha física (tipo e medida de cada uma); sem isso, todas como na composição */
+  grelhas?: { tipo: "uruguaia" | "argentina"; larguraCm: number; comprimentoCm: number }[];
+  /** uma entrada por espeto (tipo e comprimento) */
+  espetos?: { tipo: "espeto_duplo" | "espeto_chata" | "espeto_v"; comprimentoCm: number }[];
+  /** setas A e B de onde medir */
+  medidas?: boolean;
   acessorios?: Acessorios;
   /** boca da churrasqueira em cm, para desenhar o cenário */
   boca?: { a: number; b: number };
@@ -52,7 +69,8 @@ export type UpdateOptions = {
 
 export type BuilderStage = {
   update: (c: Composicao, o?: UpdateOptions) => void;
-  highlight: (parte: string | null) => void;
+  /** acende uma peça (nome exato) ou um grupo (lista de prefixos de nome) */
+  highlight: (parte: string | string[] | null) => void;
   /** posição na tela (px, relativa ao canvas) de um ponto do kit em metros */
   project: (p: [number, number, number]) => { x: number; y: number; atras: boolean };
   setActive: (on: boolean) => void;
@@ -149,7 +167,8 @@ export function createBuilderStage(
 
   let kit: THREE.Group | null = null;
   let nomesAntes = new Set<string>();
-  let destaque: string | null = null;
+  let destaque: string[] = [];
+  const casa = (nome: string) => destaque.some((d) => nome === d || nome.startsWith(d));
   let dirty = true;
   let active = false;
   let disposed = false;
@@ -176,7 +195,17 @@ export function createBuilderStage(
   );
 
   /** Une as malhas de mesmo material dentro de uma peça. */
-  function unirPeca(peca: THREE.Object3D) {
+  function unirPeca(peca: THREE.Object3D): THREE.Group {
+    const gira = peca.getObjectByName("gira");
+    if (gira && gira.parent === peca) {
+      peca.remove(gira);
+      const fixo = unirPeca(peca);
+      gira.updateMatrixWorld(true);
+      const g = unirPeca(gira);
+      g.name = "gira";
+      fixo.add(g);
+      return fixo;
+    }
     const inv = new THREE.Matrix4().copy(peca.matrixWorld).invert();
     const buckets = new Map<THREE.Material, THREE.BufferGeometry[]>();
     peca.traverse((o) => {
@@ -194,6 +223,7 @@ export function createBuilderStage(
     });
     const out = new THREE.Group();
     out.name = peca.name;
+    out.userData.base = true;
     out.position.copy(peca.position);
     out.quaternion.copy(peca.quaternion);
     for (const [mat, geos] of buckets) {
@@ -212,7 +242,7 @@ export function createBuilderStage(
   function aplicarMateriais(fantasma: string[]) {
     kit?.children.forEach((peca) => {
       const f = fantasma.includes(peca.name);
-      const on = !f && peca.name === destaque;
+      const on = !f && casa(peca.name);
       peca.traverse((o) => {
         if (!(o instanceof THREE.Mesh)) return;
         const base = o.userData.base as THREE.Material;
@@ -293,6 +323,27 @@ export function createBuilderStage(
     scene.environmentRotation.y = ENV_ROTATION_Y + (tipo === "estudio" ? 0 : ENV_FRENTE);
   }
 
+  let setas: THREE.Group | null = null;
+  function montarSetas(o: UpdateOptions, c: Composicao) {
+    if (setas) {
+      scene.remove(setas);
+      setas.traverse((m) => m instanceof THREE.Mesh && m.geometry.dispose());
+      (setas.userData.mat as THREE.Material).dispose();
+      setas = null;
+    }
+    if (!o.medidas) return;
+    setas = criarSetas(
+      medidasGeo({
+        a: (o.boca?.a ?? c.suporteLarguraCm) / 100,
+        b: (o.boca?.b ?? 60) / 100,
+        instalacao: o.instalacao ?? "suspenso",
+        peM: c.peCm / 100,
+        suporteM: c.suporteLarguraCm / 100,
+      }),
+    );
+    scene.add(setas);
+  }
+
   function disposeKit() {
     if (!kit) return;
     scene.remove(kit);
@@ -344,6 +395,9 @@ export function createBuilderStage(
     const h = host.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    // palco largo: o kit vai um pouco para a direita e deixa a coluna de pílulas livre
+    if (w >= 640) camera.setViewOffset(w, h, -w * 0.1, 0, w, h);
+    else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     dirty = true;
   };
@@ -357,8 +411,19 @@ export function createBuilderStage(
   let fps = 0;
   const ease = (t: number) => 1 - Math.pow(1 - t, 3);
 
+  let ultimoTick = performance.now();
   const tick = () => {
     const moved = controls.update();
+    const agoraTick = performance.now();
+    const dt = Math.min((agoraTick - ultimoTick) / 1000, 0.05);
+    ultimoTick = agoraTick;
+    if (!opts.reducedMotion && kit) {
+      const gira = kit.getObjectByName("acc_giratorio")?.getObjectByName("gira");
+      if (gira) {
+        gira.rotation.z += dt * 1.6; // ~15 voltas por minuto, como o motor de verdade
+        dirty = true;
+      }
+    }
     if (entradas.length) {
       const agora = performance.now();
       for (let i = entradas.length - 1; i >= 0; i--) {
@@ -400,23 +465,52 @@ export function createBuilderStage(
         pes.forEach((m) => m.removeFromParent());
         novo.add(baseCooktop(cenaMat, W, (o.boca?.b ?? 60) / 100));
       }
-      if (o.grelha === "argentina") {
-        for (const g of novo.children.filter((x) => x.name.startsWith("grelha_uruguaia_"))) {
-          const arg = grelhaArgentina(
-            cenaMat,
-            c.uruguaia.larguraCm / 100,
-            c.uruguaia.comprimentoCm / 100,
-            Number(g.name.split("_").pop()),
-          );
-          arg.position.copy(g.position);
-          novo.remove(g);
-          novo.add(arg);
-        }
-      }
+      // cada grelha física com o seu tipo e a sua medida (o buildKit desenha todas iguais)
+      const FRAME_Z = -0.1;
+      const grelhasOrig = novo.children.filter((x) => x.name.startsWith("grelha_uruguaia_"));
+      grelhasOrig.forEach((g, i) => {
+        const item = o.grelhas?.[i] ?? {
+          tipo: o.grelha ?? "uruguaia",
+          larguraCm: c.uruguaia.larguraCm,
+          comprimentoCm: c.uruguaia.comprimentoCm,
+        };
+        const igual =
+          item.tipo === "uruguaia" &&
+          item.larguraCm === c.uruguaia.larguraCm &&
+          item.comprimentoCm === c.uruguaia.comprimentoCm;
+        if (igual) return;
+        const gw = item.larguraCm / 100;
+        const gd = item.comprimentoCm / 100;
+        const nova =
+          item.tipo === "argentina"
+            ? grelhaArgentina(cenaMat, gw, gd, i)
+            : grelhaUruguaia(mats, gw, gd, i);
+        nova.position.set(g.position.x, g.position.y, FRAME_Z + 0.006 + 0.045 + gd / 2);
+        novo.remove(g);
+        novo.add(nova);
+      });
+      // cada espeto com o seu tipo (duplo ou simples) e comprimento
+      const espetosOrig = novo.children.filter((x) => x.name.startsWith("espeto_"));
+      espetosOrig.forEach((e, k) => {
+        const item = o.espetos?.[k];
+        if (!item) return;
+        const duplo = item.tipo === "espeto_duplo";
+        const novoEsp = espetoPeca(mats, item.comprimentoCm / 100, duplo, k);
+        const Lp = novoEsp.userData.Lp as number;
+        novoEsp.position.set(e.position.x, e.position.y, FRAME_Z - 0.025 + Lp + 0.015);
+        if (item.tipo === "espeto_chata") novoEsp.name = "espeto_chata_" + k;
+        if (item.tipo === "espeto_v") novoEsp.name = "espeto_v_" + k;
+        novo.remove(e);
+        novo.add(novoEsp);
+      });
       const acc = o.acessorios;
       const meioOcupado = c.uruguaia.quantidade > c.uruguaia.porNivel;
-      if (acc?.giratorio || acc?.cesto) {
-        const cesto = cestoMiudos(cenaMat, !!acc.giratorio);
+      if (acc?.giratorio) {
+        const gir = espetoGiratorio(cenaMat, !!acc.cesto);
+        posicionarAcessorio(gir, W, 1, meioOcupado);
+        novo.add(gir);
+      } else if (acc?.cesto) {
+        const cesto = cestoMiudos(cenaMat);
         posicionarAcessorio(cesto, W, 1, meioOcupado);
         novo.add(cesto);
       }
@@ -425,7 +519,13 @@ export function createBuilderStage(
         posicionarAcessorio(b, W, -1, meioOcupado);
         novo.add(b);
       }
+      if (acc?.defumador) {
+        const d = defumador(cenaMat);
+        posicionarDefumador(d, W, cooktop);
+        novo.add(d);
+      }
       montarAmbiente(o, c);
+      montarSetas(o, c);
       novo.updateMatrixWorld(true);
       const pecas = novo.children.slice().map(unirPeca);
       disposeKit();
@@ -433,7 +533,7 @@ export function createBuilderStage(
       kit.name = novo.name;
       pecas.forEach((p) => kit!.add(p));
       scene.add(kit);
-      if (o.destaque !== undefined) destaque = o.destaque;
+      if (o.destaque !== undefined) destaque = o.destaque ? [o.destaque] : [];
       fantasmaAtual = o.fantasma ?? [];
       aplicarMateriais(fantasmaAtual);
       // peça que não existia antes entra deslizando de frente (ou de cima, o suporte)
@@ -458,7 +558,7 @@ export function createBuilderStage(
       dirty = true;
     },
     highlight(parte) {
-      destaque = parte;
+      destaque = parte === null ? [] : Array.isArray(parte) ? parte : [parte];
       aplicarMateriais(fantasmaAtual);
       dirty = true;
     },

@@ -2,6 +2,10 @@
 // peças sugeridas, limites de encaixe no suporte, composição para o 3D,
 // pontos de "+" e itens do carrinho. A composição do Kit Premium vem de
 // kitComposition (a mesma tabela da fábrica usada na LP Premium).
+//
+// Grelhas e espetos são listas de linhas: o cliente pode misturar tipos
+// (uma uruguaia e uma argentina; um duplo e dois barra chata) e cada linha
+// tem a sua medida e quantidade.
 import { comprimentoGrelhaCm, kitComposition, peCm, type Composicao } from "@/lib/kitComposition";
 import {
   descreverPeca,
@@ -18,22 +22,36 @@ import {
 export type GrelhaTipo = "uruguaia" | "argentina";
 export type EspetoTipo = "espeto_duplo" | "espeto_chata" | "espeto_v";
 
+export type LinhaGrelha = {
+  tipo: GrelhaTipo;
+  larguraCm: number;
+  comprimentoCm: number;
+  qtd: number;
+};
+export type LinhaEspeto = { tipo: EspetoTipo; comprimentoCm: number; qtd: number };
+
 export type Montagem = {
   suporte: { on: boolean; larguraCm: number };
-  uruguaia: { qtd: number; larguraCm: number; comprimentoCm: number; tipo: GrelhaTipo };
+  grelhas: LinhaGrelha[];
   descanso: { qtd: number; larguraCm: number };
-  espeto: { qtd: number; tipo: EspetoTipo; comprimentoCm: number };
+  espetos: LinhaEspeto[];
 };
 
-export type Grupo = keyof Montagem;
+export type Grupo = "suporte" | "grelhas" | "descanso" | "espetos";
 
 export const A_MIN = 35;
 export const A_MAX = 139;
 export const B_MIN = 35;
 export const B_MAX = 74;
+/** espetos simultâneos no suporte (fora o giratório, que tem apoio próprio) */
+export const MAX_ESPETOS = 6;
 
 const floor5 = (v: number) => Math.floor(v / 5) * 5;
 const clamp = (v: number, a: number, b: number) => Math.min(Math.max(v, a), b);
+const soma = <T extends { qtd: number }>(l: T[]) => l.reduce((s, x) => s + x.qtd, 0);
+
+export const totalGrelhas = (m: Montagem) => soma(m.grelhas);
+export const totalEspetos = (m: Montagem) => soma(m.espetos);
 
 /** Faixa do Kit Premium que atende a medida (arredonda para baixo, como a loja). */
 export function faixaKit(a: number, b: number): { a: number; b: number } | null {
@@ -61,63 +79,115 @@ function grelhasDoSuporte(s: number) {
   };
 }
 
-/** Peças sugeridas para a medida: o equivalente ao kit, montado peça a peça. */
-export function montagemSugerida(a: number, b: number): Montagem {
+/** Medidas de grelha e espeto que servem nesta boca (base para linhas novas). */
+export function medidasSugeridas(a: number, b: number) {
   const s = encaixar(MEDIDAS.suporte, clamp(floor5(a), A_MIN, A_MAX));
   const g = grelhasDoSuporte(s);
   const comp = clamp(comprimentoGrelhaCm(clamp(floor5(b), 40, 70)), 35, 55);
   return {
-    suporte: { on: true, larguraCm: s },
-    uruguaia: { qtd: 2, larguraCm: g.uruguaia, comprimentoCm: comp, tipo: "uruguaia" },
-    descanso: { qtd: g.descansoQtd, larguraCm: g.descanso },
-    espeto: {
-      qtd: 2,
-      tipo: "espeto_duplo",
-      comprimentoCm: encaixarAcima(MEDIDAS.espeto, comp + 25),
-    },
+    suporte: s,
+    grelhaLargura: g.uruguaia,
+    grelhaComprimento: comp,
+    descanso: g.descanso,
+    descansoQtd: g.descansoQtd,
+    espeto: encaixarAcima(MEDIDAS.espeto, comp + 25),
   };
 }
 
-/** Quantas peças de cada cabem no suporte (3 níveis, 2 grelhas por nível). */
+/** Peças sugeridas para a medida: o equivalente ao kit, montado peça a peça. */
+export function montagemSugerida(a: number, b: number): Montagem {
+  const md = medidasSugeridas(a, b);
+  return {
+    suporte: { on: true, larguraCm: md.suporte },
+    grelhas: [
+      {
+        tipo: "uruguaia",
+        larguraCm: md.grelhaLargura,
+        comprimentoCm: md.grelhaComprimento,
+        qtd: 2,
+      },
+    ],
+    descanso: { qtd: md.descansoQtd, larguraCm: md.descanso },
+    espetos: [{ tipo: "espeto_duplo", comprimentoCm: md.espeto, qtd: 2 }],
+  };
+}
+
+/** Quantas peças de cada cabem no suporte (3 níveis, até 2 grelhas por nível). */
 export function capacidade(m: Montagem) {
   const s = m.suporte.larguraCm;
+  const maisLarga = Math.max(0, ...m.grelhas.map((g) => g.larguraCm));
   const nivelGrelha = 3 - (m.descanso.qtd > 0 ? 1 : 0);
   return {
-    uruguaia: m.uruguaia.larguraCm * 2 <= s ? nivelGrelha * 2 : nivelGrelha,
-    descanso: m.uruguaia.qtd > 4 ? 0 : m.descanso.larguraCm * 2 <= s ? 2 : 1,
-    espeto: 4,
+    grelhas: maisLarga * 2 <= s ? nivelGrelha * 2 : nivelGrelha,
+    descanso: totalGrelhas(m) > 4 ? 0 : m.descanso.larguraCm * 2 <= s ? 2 : 1,
+    espetos: MAX_ESPETOS,
   };
 }
 
-/** Ajusta quantidades que deixaram de caber (ex.: trocou o suporte por um menor). */
+/** Tira do fim da lista o que passou do limite. */
+function cortar<T extends { qtd: number }>(l: T[], max: number) {
+  let sobra = soma(l) - max;
+  for (let i = l.length - 1; i >= 0 && sobra > 0; i--) {
+    const tira = Math.min(l[i].qtd, sobra);
+    l[i].qtd -= tira;
+    sobra -= tira;
+  }
+}
+
+/** Ajusta quantidades que deixaram de caber e junta linhas iguais. */
 export function normalizar(m: Montagem): Montagem {
   const out: Montagem = JSON.parse(JSON.stringify(m));
-  const cap = capacidade(out);
-  out.descanso.qtd = clamp(out.descanso.qtd, 0, cap.descanso);
-  const cap2 = capacidade(out);
-  out.uruguaia.qtd = clamp(out.uruguaia.qtd, 0, cap2.uruguaia);
-  out.espeto.qtd = clamp(out.espeto.qtd, 0, cap2.espeto);
+  const juntar = <T extends { qtd: number }>(l: T[], chave: (x: T) => string) => {
+    const mapa = new Map<string, T>();
+    for (const x of l) {
+      const k = chave(x);
+      const ja = mapa.get(k);
+      if (ja) ja.qtd += x.qtd;
+      else mapa.set(k, { ...x });
+    }
+    return [...mapa.values()];
+  };
+  out.grelhas = juntar(out.grelhas, (g) => `${g.tipo}|${g.larguraCm}|${g.comprimentoCm}`);
+  out.espetos = juntar(out.espetos, (e) => `${e.tipo}|${e.comprimentoCm}`);
+  out.descanso.qtd = clamp(out.descanso.qtd, 0, capacidade(out).descanso);
+  cortar(out.grelhas, capacidade(out).grelhas);
+  cortar(out.espetos, MAX_ESPETOS);
+  // linha zerada some, mas sempre fica uma linha de cada para o cliente editar
+  out.grelhas = out.grelhas.filter((g, i) => g.qtd > 0 || i === 0);
+  out.espetos = out.espetos.filter((e, i) => e.qtd > 0 || i === 0);
   return out;
 }
 
+/** Uma entrada por peça física, na ordem em que o 3D posiciona. */
+export function grelhasPorPeca(m: Montagem) {
+  return m.grelhas.flatMap((g) => Array.from({ length: g.qtd }, () => g));
+}
+export function espetosPorPeca(m: Montagem) {
+  return m.espetos.flatMap((e) => Array.from({ length: e.qtd }, () => e));
+}
+
 export function composicaoMontagem(m: Montagem, b: number): Composicao {
-  const porNivel = m.uruguaia.larguraCm * 2 <= m.suporte.larguraCm ? 2 : 1;
+  const gs = grelhasPorPeca(m);
+  const es = espetosPorPeca(m);
+  const maisLarga = Math.max(0, ...gs.map((g) => g.larguraCm));
+  const maisComprida = Math.max(0, ...gs.map((g) => g.comprimentoCm));
+  const porNivel = maisLarga * 2 <= m.suporte.larguraCm ? 2 : 1;
   return {
     suporteLarguraCm: m.suporte.larguraCm,
     niveis: 3,
     uruguaia: {
-      larguraCm: m.uruguaia.qtd ? m.uruguaia.larguraCm : 0,
-      comprimentoCm: m.uruguaia.qtd ? m.uruguaia.comprimentoCm : 0,
-      porNivel: porNivel as 2,
-      quantidade: m.uruguaia.qtd,
+      larguraCm: gs.length ? maisLarga : 0,
+      comprimentoCm: gs.length ? maisComprida : 0,
+      porNivel,
+      quantidade: gs.length,
     },
     descanso: m.descanso.qtd
       ? { larguraCm: m.descanso.larguraCm, quantidade: m.descanso.qtd }
       : null,
     espetos: {
-      tipo: m.espeto.tipo === "espeto_duplo" ? "duplo" : "simples",
-      comprimentoCm: m.espeto.qtd ? m.espeto.comprimentoCm : 0,
-      quantidade: m.espeto.qtd,
+      tipo: "simples",
+      comprimentoCm: es.length ? Math.max(...es.map((e) => e.comprimentoCm)) : 0,
+      quantidade: es.length,
     },
     peCm: peCm(clamp(floor5(b), 40, 70)),
   };
@@ -131,9 +201,9 @@ export function composicaoKit(a: number, b: number): Composicao | null {
 /** Nome do grupo 3D -> cartão de peça. */
 export function grupoDaParte(parte: string): Grupo | null {
   if (parte === "suporte") return "suporte";
-  if (parte.startsWith("grelha_uruguaia")) return "uruguaia";
+  if (parte.startsWith("grelha_uruguaia") || parte.startsWith("grelha_argentina")) return "grelhas";
   if (parte.startsWith("grelha_descanso")) return "descanso";
-  if (parte.startsWith("espeto")) return "espeto";
+  if (parte.startsWith("espeto")) return "espetos";
   return null;
 }
 
@@ -151,17 +221,18 @@ export function ancoras(m: Montagem): Ancora[] {
   if (!m.suporte.on)
     out.push({ grupo: "suporte", rotulo: "Incluir suporte", pos: [0, BASE + 0.39, FRAME_Z] });
   const cap = capacidade(m);
-  const gw = m.uruguaia.larguraCm / 100;
-  const gd = m.uruguaia.comprimentoCm / 100;
+  const ref = m.grelhas[0];
+  const gw = ref.larguraCm / 100;
+  const gd = ref.comprimentoCm / 100;
   const porNivel = gw * 2 <= W ? 2 : 1;
-  if (m.uruguaia.qtd < cap.uruguaia) {
+  const ng = totalGrelhas(m);
+  if (ng < cap.grelhas) {
     const folga = Math.max(W - porNivel * gw, 0.02);
     const unit = folga / (porNivel + 1);
-    const idx = m.uruguaia.qtd;
-    const nivel = Math.floor(idx / porNivel);
-    const x = -W / 2 + unit + gw / 2 + (idx % porNivel) * (gw + unit);
+    const nivel = Math.floor(ng / porNivel);
+    const x = -W / 2 + unit + gw / 2 + (ng % porNivel) * (gw + unit);
     out.push({
-      grupo: "uruguaia",
+      grupo: "grelhas",
       rotulo: "Grelha",
       pos: [x, ALTURAS[nivel] + 0.01, FRAME_Z + 0.051 + gd / 2],
     });
@@ -174,9 +245,9 @@ export function ancoras(m: Montagem): Ancora[] {
       pos: [x, ALTURAS[2] + 0.01, FRAME_Z + 0.146],
     });
   }
-  if (m.espeto.qtd < cap.espeto) {
+  if (totalEspetos(m) < cap.espetos) {
     out.push({
-      grupo: "espeto",
+      grupo: "espetos",
       rotulo: "Espeto",
       pos: [W * 0.32, ALTURAS[0] + 0.03, FRAME_Z + 0.42],
     });
@@ -184,25 +255,28 @@ export function ancoras(m: Montagem): Ancora[] {
   return out;
 }
 
-export type ItemResumo = { peca: Peca; sku: string; rotulo: string };
+export type ItemResumo = { peca: Peca; sku: string; rotulo: string; grupo: Grupo };
 
 export function pecasDaMontagem(m: Montagem): ItemResumo[] {
-  const lista: Peca[] = [];
-  if (m.suporte.on) lista.push({ tipo: "suporte", larguraCm: m.suporte.larguraCm, qtd: 1 });
-  if (m.uruguaia.qtd)
-    lista.push({
-      tipo: m.uruguaia.tipo,
-      larguraCm: m.uruguaia.larguraCm,
-      comprimentoCm: m.uruguaia.comprimentoCm,
-      qtd: m.uruguaia.qtd,
-    });
+  const lista: [Peca, Grupo][] = [];
+  if (m.suporte.on)
+    lista.push([{ tipo: "suporte", larguraCm: m.suporte.larguraCm, qtd: 1 }, "suporte"]);
+  for (const g of m.grelhas)
+    if (g.qtd)
+      lista.push([
+        { tipo: g.tipo, larguraCm: g.larguraCm, comprimentoCm: g.comprimentoCm, qtd: g.qtd },
+        "grelhas",
+      ]);
   if (m.descanso.qtd)
-    lista.push({ tipo: "descanso", larguraCm: m.descanso.larguraCm, qtd: m.descanso.qtd });
-  if (m.espeto.qtd)
-    lista.push({ tipo: m.espeto.tipo, larguraCm: m.espeto.comprimentoCm, qtd: m.espeto.qtd });
-  return lista.flatMap((p) => {
+    lista.push([
+      { tipo: "descanso", larguraCm: m.descanso.larguraCm, qtd: m.descanso.qtd },
+      "descanso",
+    ]);
+  for (const e of m.espetos)
+    if (e.qtd) lista.push([{ tipo: e.tipo, larguraCm: e.comprimentoCm, qtd: e.qtd }, "espetos"]);
+  return lista.flatMap(([p, grupo]) => {
     const sku = skuPeca(p);
-    return sku ? [{ peca: p, sku, rotulo: descreverPeca(p) }] : [];
+    return sku ? [{ peca: p, sku, rotulo: descreverPeca(p), grupo }] : [];
   });
 }
 
@@ -214,13 +288,13 @@ export function conteudoKit(c: Composicao, cooktop = false) {
   );
   if (c.descanso)
     l.push(
-      `${c.descanso.quantidade} ${c.descanso.quantidade > 1 ? "grelhas" : "grelha"} de descanso ${c.descanso.larguraCm} cm`,
+      `${c.descanso.quantidade} ${c.descanso.quantidade > 1 ? "grelhas" : "grelha"} auxiliar ${c.descanso.larguraCm} cm`,
     );
   l.push(`${c.espetos.quantidade} espetos duplos ${c.espetos.comprimentoCm} cm`);
   l.push(
     cooktop
       ? "Encaixe cooktop: apoia na bancada, sem furar a parede"
-      : `Pés de fixação ${c.peCm} cm, parafusos inclusos`,
+      : `Pés de fixação ${c.peCm} cm, buchas e parafusos inclusos`,
   );
   return l;
 }

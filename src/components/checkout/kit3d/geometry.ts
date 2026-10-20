@@ -271,7 +271,7 @@ function suporteFrame(
   return g;
 }
 
-function grelhaUruguaia(MAT: KitMaterials, gw: number, gd: number, idx: number) {
+export function grelhaUruguaia(MAT: KitMaterials, gw: number, gd: number, idx: number) {
   const g = new THREE.Group();
   g.name = "grelha_uruguaia_" + idx;
   const gr = 0.0024,
@@ -338,7 +338,7 @@ function grelhaDescanso(MAT: KitMaterials, dw: number, dd: number, idx: number) 
   return g;
 }
 
-function espetoPeca(MAT: KitMaterials, totalM: number, duplo: boolean, idx: number) {
+export function espetoPeca(MAT: KitMaterials, totalM: number, duplo: boolean, idx: number) {
   const g = new THREE.Group();
   g.name = (duplo ? "espeto_duplo_" : "espeto_simples_") + idx;
   const cabo = 0.13;

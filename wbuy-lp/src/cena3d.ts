@@ -4,6 +4,7 @@
 // Mesmas unidades e eixos do buildKit: metros, y para cima, o suporte no plano
 // z = -0,1 com as grelhas saindo para +z; base do suporte em y = 0,16.
 import * as THREE from "three";
+import { medidasGeo, type MedidasGeo } from "./medidas";
 
 export const BASE_Y = 0.16;
 export const FRAME_Z = -0.1;
@@ -12,7 +13,12 @@ const ALTURAS = [0.048, 0.175, 0.302].map((y) => y + BASE_Y);
 
 export type Ambiente = "estudio" | "fechada" | "lateral" | "bancada" | "gourmet";
 export type Instalacao = "suspenso" | "cooktop";
-export type Acessorios = { cesto: boolean; giratorio: boolean; bandeja: boolean };
+export type Acessorios = {
+  giratorio: boolean;
+  cesto: boolean;
+  bandeja: boolean;
+  defumador: boolean;
+};
 
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
@@ -296,16 +302,19 @@ export function grelhaArgentina(M: CenaMateriais, gw: number, gd: number, idx: n
     g.add(tubo(V(x, -0.004, gd / 2), V(x, -0.016, gd / 2 + 0.06), 0.003, M.inox));
     g.add(tubo(V(x, -0.016, gd / 2 + 0.06), V(x, -0.016, gd / 2 + 0.19), 0.0155, M.inox, 24));
   });
+  // coletor removível na frente: as canaletas despejam a gordura nele
+  const col = 0.03;
+  g.add(caixa(gw - 0.01, 0.0015, col, M.inox, 0, -0.02, gd / 2 + col / 2));
+  [-1, 1].forEach((s) =>
+    g.add(caixa(0.0015, 0.016, col, M.inox, s * (gw / 2 - 0.005), -0.012, gd / 2 + col / 2)),
+  );
+  g.add(caixa(gw - 0.01, 0.016, 0.0015, M.inox, 0, -0.012, gd / 2 + col));
   return g;
 }
 
-/** Cesto de miúdos: gaiola cilíndrica no espeto (com motor no combo giratório). */
-export function cestoMiudos(M: CenaMateriais, comMotor: boolean) {
-  const g = new THREE.Group();
-  g.name = comMotor ? "acc_giratorio" : "acc_cesto";
+/** Gaiola do cesto de miúdos em volta do eixo z (de z0 até z0+len). Devolve o raio. */
+function gaiolaCesto(M: CenaMateriais, alvo: THREE.Object3D, z0: number, len: number) {
   const r = 0.06;
-  const len = 0.26;
-  const z0 = 0.03;
   [z0, z0 + len].forEach((z) => {
     const disco = new THREE.Mesh(
       new THREE.CylinderGeometry(r + 0.004, r + 0.004, 0.003, 32),
@@ -313,11 +322,11 @@ export function cestoMiudos(M: CenaMateriais, comMotor: boolean) {
     );
     disco.rotation.x = Math.PI / 2;
     disco.position.z = z;
-    g.add(disco);
+    alvo.add(disco);
   });
   for (let i = 0; i < 14; i++) {
     const a = (i / 14) * Math.PI * 2;
-    g.add(
+    alvo.add(
       tubo(
         V(Math.cos(a) * r, Math.sin(a) * r, z0),
         V(Math.cos(a) * r, Math.sin(a) * r, z0 + len),
@@ -327,20 +336,80 @@ export function cestoMiudos(M: CenaMateriais, comMotor: boolean) {
       ),
     );
   }
-  g.add(tubo(V(0, 0, -0.02), V(0, 0, z0 + len + 0.12), 0.0035, M.inox));
+  return r;
+}
+
+/** Cesto de miúdos sozinho: gaiola num espeto com cabo. */
+export function cestoMiudos(M: CenaMateriais) {
+  const g = new THREE.Group();
+  g.name = "acc_cesto";
+  const r = gaiolaCesto(M, g, 0.03, 0.26);
+  g.add(tubo(V(0, 0, -0.02), V(0, 0, 0.41), 0.0035, M.inox));
   const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.0035, 0.025, 12), M.inox);
   ponta.rotation.x = -Math.PI / 2;
   ponta.position.z = -0.032;
   g.add(ponta);
-  const zc = z0 + len + 0.12;
-  if (comMotor) {
-    g.add(tubo(V(0, 0, zc), V(0, 0, zc + 0.2), 0.022, M.inox, 28));
-    const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.0225, 0.0225, 0.012, 28), M.preto);
-    tampa.rotation.x = Math.PI / 2;
-    tampa.position.z = zc + 0.206;
-    g.add(tampa);
-  } else g.add(tubo(V(0, 0, zc), V(0, 0, zc + 0.13), 0.0155, M.inox, 24));
+  g.add(tubo(V(0, 0, 0.41), V(0, 0, 0.54), 0.0155, M.inox, 24));
   g.userData.alturaExtra = r;
+  return g;
+}
+
+/**
+ * Kit espeto giratório: motor a pilha no cabo, eixo que gira e garfo de três pontas
+ * dentro de uma moldura. Com o cesto, a gaiola vai no lugar do garfo (como no combo).
+ * A parte que gira fica no filho "gira" (o palco anima a rotação dele).
+ */
+export function espetoGiratorio(M: CenaMateriais, comCesto: boolean) {
+  const g = new THREE.Group();
+  g.name = "acc_giratorio";
+  const gira = new THREE.Group();
+  gira.name = "gira";
+  const comp = 0.46;
+  gira.add(tubo(V(0, 0, -0.02), V(0, 0, comp), 0.0035, M.inox));
+  const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.0035, 0.025, 12), M.inox);
+  ponta.rotation.x = -Math.PI / 2;
+  ponta.position.z = -0.032;
+  gira.add(ponta);
+  let raio = 0.05;
+  if (comCesto) raio = gaiolaCesto(M, gira, 0.05, 0.26);
+  else {
+    // garfo: três pontas presas numa travessa, dentro de uma moldura retangular
+    const w = 0.09;
+    const z0 = 0.06;
+    const z1 = 0.36;
+    gira.add(tubo(V(-w, 0, z1), V(w, 0, z1), 0.003, M.inox));
+    gira.add(tubo(V(-w, 0, z0 - 0.02), V(w, 0, z0 - 0.02), 0.003, M.inox));
+    [-1, 1].forEach((s) => gira.add(tubo(V(s * w, 0, z0 - 0.02), V(s * w, 0, z1), 0.003, M.inox)));
+    [-0.035, 0, 0.035].forEach((x) =>
+      gira.add(tubo(V(x, 0, z1 - 0.02), V(x, 0, z0 + 0.03), 0.0025, M.inox)),
+    );
+  }
+  g.add(gira);
+  // motor: corpo de inox com a tampa preta do interruptor
+  g.add(tubo(V(0, 0, comp), V(0, 0, comp + 0.2), 0.022, M.inox, 28));
+  const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.0225, 0.0225, 0.012, 28), M.preto);
+  tampa.rotation.x = Math.PI / 2;
+  tampa.position.z = comp + 0.206;
+  g.add(tampa);
+  g.userData.alturaExtra = raio;
+  return g;
+}
+
+/** Defumador: caixa de inox perfurada com tampa e alças, apoiada na brasa. */
+export function defumador(M: CenaMateriais) {
+  const g = new THREE.Group();
+  g.name = "acc_defumador";
+  const w = 0.1;
+  const h = 0.06;
+  const len = 0.28;
+  g.add(caixa(w, 0.002, len, M.perfurado, 0, -h / 2, 0));
+  [-1, 1].forEach((s) => g.add(caixa(0.002, h, len, M.perfurado, (s * w) / 2, 0, 0)));
+  [-1, 1].forEach((s) => g.add(caixa(w, h, 0.002, M.inox, 0, 0, (s * len) / 2)));
+  g.add(caixa(w + 0.006, 0.002, len + 0.006, M.perfurado, 0, h / 2, 0));
+  [-1, 1].forEach((s) =>
+    g.add(caixa(0.05, 0.022, 0.002, M.inox, 0, h / 2 + 0.006, s * (len / 2 + 0.012))),
+  );
+  g.userData.alturaExtra = h / 2;
   return g;
 }
 
@@ -366,16 +435,66 @@ export function bandejaCoracao(M: CenaMateriais) {
   return g;
 }
 
-/** Posição dos acessórios no suporte: nível do meio, encostados nas laterais. */
+/** Posição dos acessórios no suporte: encostados nas laterais, no nível pedido. */
 export function posicionarAcessorio(
   peca: THREE.Object3D,
   larguraM: number,
   lado: -1 | 1,
   nivelOcupado: boolean,
+  nivel = 1,
 ) {
   const extra = (peca.userData.alturaExtra as number) ?? 0.03;
-  const y = ALTURAS[1] + extra + 0.006 + (nivelOcupado ? 0.05 : 0);
+  const y = ALTURAS[nivel] + extra + 0.006 + (nivelOcupado ? 0.05 : 0);
   peca.position.set(lado * (larguraM / 2 - 0.09), y, FRAME_Z + 0.005);
+}
+
+/** O defumador vai embaixo do suporte, direto sobre a brasa. */
+export function posicionarDefumador(peca: THREE.Object3D, larguraM: number, cooktop: boolean) {
+  const h = (peca.userData.alturaExtra as number) ?? 0.03;
+  peca.position.set(-larguraM / 2 + 0.11, (cooktop ? BASE_Y - 0.33 : 0.02) + h, FRAME_Z + 0.22);
+}
+
+// ---------- medidas A e B (setas sobre a cena) ----------
+
+export { medidasGeo };
+/** Setas brancas com pontas e marcas de parede, sempre visíveis por cima do kit. */
+export function criarSetas(geo: MedidasGeo) {
+  const g = new THREE.Group();
+  g.name = "medidas";
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true });
+  const seta = (p1: THREE.Vector3Tuple, p2: THREE.Vector3Tuple) => {
+    const a = new THREE.Vector3(...p1);
+    const b = new THREE.Vector3(...p2);
+    const dir = new THREE.Vector3().subVectors(b, a).normalize();
+    const ponta = 0.028;
+    g.add(
+      tubo(
+        a.clone().addScaledVector(dir, ponta),
+        b.clone().addScaledVector(dir, -ponta),
+        0.0028,
+        mat,
+        8,
+      ),
+    );
+    const pontas: [THREE.Vector3, THREE.Vector3][] = [
+      [a, dir.clone().negate()],
+      [b, dir],
+    ];
+    for (const [pt, d] of pontas) {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.011, ponta, 14), mat);
+      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d);
+      cone.position.copy(pt).addScaledVector(d, -ponta / 2);
+      g.add(cone);
+      const marca = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.05, 0.004), mat);
+      marca.position.copy(pt);
+      g.add(marca);
+    }
+  };
+  seta(geo.a[0], geo.a[1]);
+  seta(geo.b[0], geo.b[1]);
+  g.traverse((o) => (o.renderOrder = 10));
+  g.userData.mat = mat;
+  return g;
 }
 
 // ---------- a churrasqueira ----------

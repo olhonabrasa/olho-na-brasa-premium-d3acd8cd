@@ -173,14 +173,14 @@ export function descreverPeca(p: Peca) {
 
 /** Acessórios vendidos prontos (um SKU só, sem medida). */
 export const ACESSORIOS = {
+  giratorio: { sku: "2753580.100851.0", nome: "Kit espeto giratório", img: "peca-giratorio" },
   cesto: { sku: "5772953.101891.0", nome: "Cesto de miúdos", img: "cesto-miudos" },
-  giratorio: {
-    sku: "5798902.365218.0",
-    nome: "Espeto giratório com motor + cesto de miúdos",
-    img: "kit-giratorio",
-  },
   bandeja: { sku: "5126259.101891.0", nome: "Bandeja de coração", img: "bandeja-coracao" },
+  defumador: { sku: "2269083.101891.0", nome: "Defumador", img: "peca-defumador" },
 } as const;
+
+/** Giratório + cesto juntos saem pelo combo da loja (mais barato que os dois separados). */
+export const COMBO_GIRATORIO_CESTO = "5798902.365218.0";
 
 /**
  * Encaixe cooktop ("Suporte suspenso Cooktop", produto 5214745 no painel).
