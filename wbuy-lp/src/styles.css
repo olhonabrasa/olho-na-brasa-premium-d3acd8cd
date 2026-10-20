@@ -97,6 +97,19 @@ html.onb-lp-ativa body {
   color: var(--onb-brasa);
   text-decoration: none;
 }
+/* o tema fixa todo <header> no topo da página (branco, z-index 1001); dentro da LP eles são só blocos */
+#onb-kit-lp :where(header, footer, nav) {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
 #onb-kit-lp .onb-simulado {
   background: #fff3cd;
   color: #6b4e00;
