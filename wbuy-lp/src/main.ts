@@ -1264,5 +1264,17 @@ if (raiz && !raiz.classList.contains("onb-pronto")) {
   estilo.id = "onb-kit-lp-css";
   estilo.textContent = css;
   document.head.appendChild(estilo);
+  // a fonte vem daqui: o editor da Wbuy remove <link> e o @import colado na página não carrega
+  if (!document.querySelector('link[href*="family=Inter"]')) {
+    const pre = document.createElement("link");
+    pre.rel = "preconnect";
+    pre.href = "https://fonts.gstatic.com";
+    pre.crossOrigin = "anonymous";
+    const fonte = document.createElement("link");
+    fonte.rel = "stylesheet";
+    fonte.href =
+      "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap";
+    document.head.append(pre, fonte);
+  }
   iniciar(raiz);
 }

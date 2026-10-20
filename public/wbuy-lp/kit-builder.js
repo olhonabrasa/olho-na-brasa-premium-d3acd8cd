@@ -300,4 +300,4 @@ var e=`#onb-kit-lp{--onb-noite:#0b0b0c;--onb-noite-2:#161618;--onb-papel:#f5f5f7
   <div class="onb-dock">
     <div class="onb-total"></div>
     <button type="button" class="onb-comprar">Comprar</button>
-  </div>`}var U=document.getElementById(`onb-kit-lp`);if(U&&!U.classList.contains(`onb-pronto`)){let t=document.createElement(`style`);t.id=`onb-kit-lp-css`,t.textContent=e,document.head.appendChild(t),Me(U)}
+  </div>`}var U=document.getElementById(`onb-kit-lp`);if(U&&!U.classList.contains(`onb-pronto`)){let t=document.createElement(`style`);if(t.id=`onb-kit-lp-css`,t.textContent=e,document.head.appendChild(t),!document.querySelector(`link[href*="family=Inter"]`)){let e=document.createElement(`link`);e.rel=`preconnect`,e.href=`https://fonts.gstatic.com`,e.crossOrigin=`anonymous`;let t=document.createElement(`link`);t.rel=`stylesheet`,t.href=`https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap`,document.head.append(e,t)}Me(U)}
