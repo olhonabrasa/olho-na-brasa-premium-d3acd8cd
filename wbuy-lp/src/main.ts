@@ -141,6 +141,46 @@ const VIDEOS = [
   ],
 ];
 
+/** Cada destaque é um trecho do vídeo do kit em uso (cortado em wbuy-lp/public-img/dest-*.mp4). */
+const DESTAQUES = [
+  {
+    id: "suporte",
+    titulo: "Três alturas de brasa.",
+    texto: "Um suporte só, cortado na medida da sua churrasqueira.",
+  },
+  {
+    id: "inox",
+    titulo: "Inox 304 alimentício.",
+    texto: "Não enferruja, não passa gosto e tem 15 anos de garantia.",
+  },
+  {
+    id: "giratorio",
+    titulo: "Espeto giratório.",
+    texto: "Gira sozinho no ponto da brasa enquanto você cuida do resto.",
+  },
+  {
+    id: "duplo",
+    titulo: "Espeto duplo.",
+    texto: "Duas pontas seguram a peça. A carne não gira e o ponto não escapa.",
+  },
+  {
+    id: "simples",
+    titulo: "Espeto simples.",
+    texto: "Para linguiça, coração e queijo. Entra e sai sem esforço.",
+  },
+  {
+    id: "descanso",
+    titulo: "Grelha auxiliar.",
+    texto: "Lá em cima, segura a carne pronta quente sem passar do ponto.",
+  },
+  {
+    id: "uruguaia",
+    titulo: "Grelha uruguaia.",
+    texto: "Varões em V escorrem a gordura. Menos labareda, mais sabor.",
+  },
+];
+const DESTAQUE_MS = 5200;
+
 function iniciar(root: HTMLElement) {
   const params = new URLSearchParams(location.search);
   const a0 = Number(params.get("a")) || 70;
@@ -766,6 +806,104 @@ function iniciar(root: HTMLElement) {
     ).observe(vCook);
   }
 
+  // ---------- destaques: carrossel de vídeos curtos, um por peça ----------
+  const trilho = $(".onb-dest-trilho");
+  const cards = [...root.querySelectorAll<HTMLElement>(".onb-dest-card")];
+  const pontos = [...root.querySelectorAll<HTMLButtonElement>("[data-dest]")];
+  const btnPlay = $<HTMLButtonElement>("[data-dest-play]");
+  let atual = 0;
+  let tocando = !reduced;
+  let destVisivel = false;
+  let timer = 0;
+
+  function irDestaque(i: number, rolar = true) {
+    atual = (i + cards.length) % cards.length;
+    pontos.forEach((p, k) => p.toggleAttribute("aria-current", k === atual));
+    root.style.setProperty("--onb-dest-ms", DESTAQUE_MS + "ms");
+    if (rolar) {
+      const c = cards[atual];
+      trilho.scrollTo({
+        left: c.offsetLeft - (trilho.clientWidth - c.clientWidth) / 2,
+        behavior: reduced ? "auto" : "smooth",
+      });
+    }
+    cards.forEach((c, k) => {
+      const v = c.querySelector("video")!;
+      if (k === atual && destVisivel && tocando) {
+        v.preload = "auto";
+        v.play().catch(() => {});
+      } else v.pause();
+      c.classList.toggle("ativo", k === atual);
+    });
+    // pré-carrega o próximo para a troca não piscar
+    const prox = cards[(atual + 1) % cards.length].querySelector("video")!;
+    if (destVisivel) prox.preload = "auto";
+    clearTimeout(timer);
+    trilho.closest("section")!.classList.toggle("tocando", destVisivel && tocando);
+    if (destVisivel && tocando) timer = window.setTimeout(() => irDestaque(atual + 1), DESTAQUE_MS);
+  }
+  pontos.forEach((p, k) => p.addEventListener("click", () => irDestaque(k)));
+  btnPlay.addEventListener("click", () => {
+    tocando = !tocando;
+    btnPlay.classList.toggle("pausado", !tocando);
+    btnPlay.setAttribute("aria-label", tocando ? "Pausar destaques" : "Tocar destaques");
+    irDestaque(atual, false);
+  });
+  btnPlay.classList.toggle("pausado", !tocando);
+  // arrastar/rolar o trilho na mão escolhe o cartão mais centralizado
+  let tRolagem = 0;
+  trilho.addEventListener(
+    "scroll",
+    () => {
+      clearTimeout(tRolagem);
+      tRolagem = window.setTimeout(() => {
+        const meio = trilho.scrollLeft + trilho.clientWidth / 2;
+        let melhor = 0;
+        cards.forEach((c, k) => {
+          const d = Math.abs(c.offsetLeft + c.clientWidth / 2 - meio);
+          const dm = Math.abs(cards[melhor].offsetLeft + cards[melhor].clientWidth / 2 - meio);
+          if (d < dm) melhor = k;
+        });
+        if (melhor !== atual) irDestaque(melhor, false);
+      }, 120);
+    },
+    { passive: true },
+  );
+  cards.forEach((c, k) => c.addEventListener("click", () => k !== atual && irDestaque(k)));
+  new IntersectionObserver(
+    ([e]) => {
+      destVisivel = e.isIntersecting;
+      irDestaque(atual, false);
+    },
+    { threshold: 0.35 },
+  ).observe(trilho);
+
+  // vídeo da troca de altura (abre por cima da página)
+  const modal = $<HTMLDialogElement>(".onb-modal");
+  const vModal = modal.querySelector("video")!;
+  root.querySelector("[data-video-modal]")?.addEventListener("click", () => {
+    if (typeof modal.showModal === "function") modal.showModal();
+    else modal.setAttribute("open", "");
+    vModal.preload = "auto";
+    vModal.currentTime = 0;
+    vModal.play().catch(() => {});
+    clearTimeout(timer);
+  });
+  const fecharModal = () => {
+    vModal.pause();
+    modal.close?.();
+    modal.removeAttribute("open");
+    irDestaque(atual, false);
+  };
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal || (e.target as HTMLElement).closest("[data-fechar-modal]"))
+      fecharModal();
+  });
+  modal.addEventListener("close", () => {
+    vModal.pause();
+    irDestaque(atual, false);
+  });
+
   // barra do produto (desktop) e dock (celular): aparecem depois do topo, somem no resumo
   const resumo = $(".onb-resumo");
   const dock = $(".onb-dock");
@@ -868,16 +1006,32 @@ function esqueleto(s: Estado) {
       <p class="onb-lede">Suporte suspenso ou cooktop em aço inox 304 espelhado, feito na medida exata da sua churrasqueira. Para quem ama assar carne e não aceita menos que o melhor.</p>
       <div class="onb-ctas">
         <button type="button" class="onb-btn" data-ir-montador>Monte o seu em 3D</button>
-        <a class="onb-btn-link" href="#onb-formas">Suspenso ou cooktop? ›</a>
       </div>
+      <p class="onb-prova"><span class="onb-estrelas" aria-hidden="true">★★★★★</span> +100 mil churrasqueiras entregues</p>
     </div>
     <figure class="onb-hero-foto">${foto("cooktop-showroom", "Kit cooktop em inox espelhado instalado em bancada de granito, com grelhas, espetos e gaveta", 1600, 1600, "", true)}</figure>
-    <ul class="onb-fatos onb-dentro">
-      <li><b>304</b><span>aço inox alimentício</span></li>
-      <li><b>15 anos</b><span>de garantia por escrito</span></li>
-      <li><b>3 níveis</b><span>de brasa no mesmo suporte</span></li>
-      <li><b>100 mil+</b><span>churrasqueiras entregues</span></li>
-    </ul>
+  </section>
+
+  <section class="onb-destaques onb-escuro" aria-labelledby="onb-dest-t">
+    <div class="onb-dentro onb-dest-topo">
+      <h2 id="onb-dest-t">Comece pelos destaques.</h2>
+      <button type="button" class="onb-btn-link onb-dest-video" id="video-headline" data-video-modal>Assistir ao vídeo <span class="onb-ico-play" aria-hidden="true"></span></button>
+    </div>
+    <div class="onb-dest-trilho" tabindex="0" aria-roledescription="carrossel" aria-label="Destaques do kit em uso">
+      ${DESTAQUES.map(
+        (d, i) => `
+      <article class="onb-dest-card" aria-roledescription="slide" aria-label="${i + 1} de ${DESTAQUES.length}">
+        <video src="${IMG}dest-${d.id}.mp4" poster="${IMG}dest-${d.id}.webp" muted loop playsinline preload="none" aria-hidden="true"></video>
+        <p class="onb-dest-txt"><strong>${d.titulo}</strong> ${d.texto}</p>
+      </article>`,
+      ).join("")}
+    </div>
+    <div class="onb-dest-ctrl">
+      <div class="onb-dest-pontos" role="group" aria-label="Escolher destaque">
+        ${DESTAQUES.map((d, i) => `<button type="button" data-dest="${i}" aria-label="${d.titulo.replace(".", "")}"${i === 0 ? ' aria-current="true"' : ""}><i></i></button>`).join("")}
+      </div>
+      <button type="button" class="onb-dest-play" data-dest-play aria-label="Pausar destaques"><span aria-hidden="true"></span></button>
+    </div>
   </section>
 
   <section class="onb-formas onb-claro" id="onb-formas" aria-labelledby="onb-formas-t">
@@ -1089,6 +1243,14 @@ function esqueleto(s: Estado) {
       </div>
     </div>
   </section>
+
+  <dialog class="onb-modal" aria-label="Vídeo: mudando a altura da grelha">
+    <div class="onb-modal-corpo">
+      <button type="button" class="onb-modal-fechar" data-fechar-modal aria-label="Fechar vídeo">×</button>
+      <video src="${IMG}altura-cooktop.mp4" poster="${IMG}altura-cooktop.webp" playsinline muted loop preload="none"></video>
+      <p><strong>Muda de altura com a brasa acesa.</strong> Levanta a grelha e encaixa no nível de cima, sem tirar nada de dentro da churrasqueira e sem pingar gordura no chão.</p>
+    </div>
+  </dialog>
 
   <div class="onb-dock">
     <div class="onb-total"></div>

@@ -1585,6 +1585,294 @@
   }
 }
 
+/* ---------- prova no topo ---------- */
+#onb-kit-lp .onb-prova {
+  margin-top: 22px;
+  font-size: 15px;
+  color: var(--onb-claro-suave);
+}
+#onb-kit-lp .onb-estrelas {
+  color: #f5a623;
+  letter-spacing: 2px;
+  margin-right: 6px;
+}
+
+/* ---------- destaques (carrossel de vídeos) ---------- */
+#onb-kit-lp .onb-destaques {
+  background: var(--onb-noite-2);
+  padding-block: clamp(64px, 8vw, 120px);
+  overflow: hidden;
+}
+#onb-kit-lp .onb-dest-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: clamp(28px, 4vw, 44px);
+}
+#onb-kit-lp .onb-dest-topo h2 {
+  font-size: clamp(32px, 4.6vw, 56px);
+}
+#onb-kit-lp .onb-dest-video {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+#onb-kit-lp .onb-ico-play {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+#onb-kit-lp .onb-ico-play::after {
+  content: "";
+  margin-left: 2px;
+  border-left: 7px solid currentColor;
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+}
+#onb-kit-lp .onb-dest-trilho {
+  --onb-borda: max(20px, calc((100% - 1080px) / 2));
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-inline: var(--onb-borda);
+  scroll-padding-inline: var(--onb-borda);
+  scrollbar-width: none;
+  outline: none;
+}
+#onb-kit-lp .onb-dest-trilho::-webkit-scrollbar {
+  display: none;
+}
+#onb-kit-lp .onb-dest-card {
+  position: relative;
+  flex: 0 0 min(1080px, calc(100% - 40px));
+  aspect-ratio: 16 / 8.4;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #000;
+  scroll-snap-align: center;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.6s ease;
+}
+#onb-kit-lp .onb-dest-card.ativo {
+  opacity: 1;
+  cursor: default;
+}
+#onb-kit-lp .onb-dest-card video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#onb-kit-lp .onb-dest-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.35) 38%, transparent 62%);
+  pointer-events: none;
+}
+#onb-kit-lp .onb-dest-txt {
+  position: absolute;
+  z-index: 1;
+  left: clamp(24px, 5vw, 60px);
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 19ch;
+  font-size: clamp(20px, 2.5vw, 32px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: #fff;
+  text-wrap: balance;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.15s;
+}
+#onb-kit-lp .onb-dest-card.ativo .onb-dest-txt {
+  opacity: 1;
+}
+#onb-kit-lp .onb-dest-txt strong {
+  font-weight: 600;
+  color: var(--onb-brasa);
+}
+#onb-kit-lp .onb-dest-ctrl {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+#onb-kit-lp .onb-dest-pontos {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 52px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(12px);
+}
+#onb-kit-lp .onb-dest-pontos button {
+  display: grid;
+  place-items: center;
+  height: 24px;
+  padding: 0 4px;
+}
+#onb-kit-lp .onb-dest-pontos i {
+  position: relative;
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.45);
+  overflow: hidden;
+  transition: width 0.4s ease;
+}
+#onb-kit-lp .onb-dest-pontos [aria-current] i {
+  width: 44px;
+  background: rgb(255 255 255 / 0.3);
+}
+#onb-kit-lp .onb-dest-pontos [aria-current] i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  transform-origin: left;
+}
+#onb-kit-lp .onb-destaques.tocando .onb-dest-pontos [aria-current] i::after {
+  animation: onb-progresso-dest var(--onb-dest-ms, 5200ms) linear both;
+}
+@keyframes onb-progresso-dest {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+#onb-kit-lp .onb-dest-play {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(12px);
+}
+#onb-kit-lp .onb-dest-play span {
+  width: 12px;
+  height: 14px;
+  border-left: 4px solid #fff;
+  border-right: 4px solid #fff;
+}
+#onb-kit-lp .onb-dest-play.pausado span {
+  width: 0;
+  height: 0;
+  margin-left: 4px;
+  border-right: 0;
+  border-left: 13px solid #fff;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+
+/* ---------- vídeo da altura (por cima da página) ---------- */
+#onb-kit-lp .onb-modal {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  background: transparent;
+  max-width: 100vw;
+  max-height: 100vh;
+  overflow: visible;
+  color: #fff;
+}
+#onb-kit-lp .onb-modal::backdrop {
+  background: rgb(0 0 0 / 0.86);
+  backdrop-filter: blur(8px);
+}
+#onb-kit-lp .onb-modal-corpo {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 16px;
+}
+#onb-kit-lp .onb-modal video {
+  height: min(78vh, 760px);
+  width: auto;
+  aspect-ratio: 9 / 16;
+  max-width: calc(100vw - 32px);
+  object-fit: cover;
+  border-radius: 24px;
+  background: #000;
+}
+#onb-kit-lp .onb-modal p {
+  max-width: 34em;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--onb-claro-suave);
+}
+#onb-kit-lp .onb-modal p strong {
+  color: #fff;
+}
+#onb-kit-lp .onb-modal-fechar {
+  position: absolute;
+  top: 0;
+  right: -44px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+}
+
+@media (max-width: 899px) {
+  #onb-kit-lp .onb-dest-card {
+    aspect-ratio: 4 / 5;
+    flex-basis: calc(100% - 40px);
+  }
+  #onb-kit-lp .onb-dest-card video {
+    object-position: 42% 50%;
+  }
+  #onb-kit-lp .onb-dest-card::after {
+    background: linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0.75) 0%,
+      rgb(0 0 0 / 0.2) 40%,
+      transparent 60%
+    );
+  }
+  #onb-kit-lp .onb-dest-txt {
+    top: 26px;
+    left: 24px;
+    right: 24px;
+    transform: none;
+    max-width: none;
+    font-size: 21px;
+  }
+  #onb-kit-lp .onb-modal-fechar {
+    right: 24px;
+    top: 24px;
+    z-index: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #onb-kit-lp .onb-dest-txt,
+  #onb-kit-lp .onb-dest-card {
+    transition: none;
+  }
+}
+
 /* página de conteúdo da Wbuy: sem o respiro de 50px antes da LP */
 #informacoes:has(#onb-kit-lp) {
   padding: 0 !important;
