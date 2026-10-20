@@ -199,10 +199,14 @@
 
 /* ---------- barra do produto ---------- */
 #onb-kit-lp .onb-barra-produto {
-  position: sticky;
+  /* fixa e fora do fluxo: não empurra o topo da LP para baixo */
+  position: fixed;
   top: var(--onb-topo);
+  left: 0;
+  right: 0;
   z-index: 40;
-  height: 0;
+  height: 0 !important;
+  margin: 0 !important;
 }
 #onb-kit-lp .onb-barra-dentro {
   height: var(--onb-barra-h);
