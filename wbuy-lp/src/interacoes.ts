@@ -1,9 +1,7 @@
-// Comportamento das dobras (tudo fora do montador): abertura com a brasa,
+// Comportamento das dobras (tudo fora do montador): filme do topo,
 // carrossel de destaques, antes e depois, vídeos, WhatsApp e entradas suaves.
 import { WHATS } from "./conteudo";
 import { IMG } from "./util";
-
-const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
 
 /** Abre o chat flutuante da loja; sem ele, cai no WhatsApp direto. */
 export function abrirWhats(texto?: string) {
@@ -19,202 +17,79 @@ export function abrirWhats(texto?: string) {
   window.open(WHATS + (texto ? "?text=" + encodeURIComponent(texto) : ""), "_blank", "noopener");
 }
 
-// ---------- abertura: uma brasa acende, a câmera recua, aparece o kit ----------
+// ---------- topo: o filme da montagem (brasa → nicho → kit completo) ----------
 
-type Brasa = {
-  x: number;
-  y: number;
-  r: number;
-  acende: number;
-  fase: number;
-  vel: number;
-  forma: number[];
-  giro: number;
-};
-type Faisca = { x: number; y: number; vx: number; vy: number; vida: number; max: number };
+/** Momentos do filme (s): até aqui o título fica sobre a brasa; daqui em diante o kit já está montado. */
+const FILME_TITULO_SAI = 5.4;
+const FILME_KIT_PRONTO = 20.6;
 
-export function aberturaBrasa(root: HTMLElement, reduzido: boolean) {
+/**
+ * Toca uma vez, mudo, e para no último quadro com o kit completo.
+ * No computador o título sai de cena enquanto as peças entram e volta no fim;
+ * no celular o vídeo fica no alto e o texto embaixo dele, sem cobrir nada.
+ * Menos movimento, economia de dados ou página já rolada: fica a foto final, com um botão para assistir.
+ */
+export function filmeTopo(root: HTMLElement, reduzido: boolean) {
   const hero = root.querySelector<HTMLElement>(".onb-hero")!;
-  const canvas = hero.querySelector<HTMLCanvasElement>(".onb-brasa")!;
-  const img = hero.querySelector<HTMLImageElement>(".onb-hero-img")!;
-  const textos = [
-    ...hero.querySelectorAll<HTMLElement>(".onb-marca, .onb-hero-esq, .onb-hero-dir"),
-  ];
-  // já rolou a página ou pediu menos movimento: mostra o resultado direto
-  if (reduzido || scrollY > 200) {
-    hero.classList.add("onb-intro-fim");
+  const video = hero.querySelector<HTMLVideoElement>(".onb-hero-video")!;
+  const replay = hero.querySelector<HTMLButtonElement>(".onb-hero-replay")!;
+  const conexao = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  const celular = matchMedia("(max-width: 899px)").matches;
+  hero.style.backgroundImage = `url("${IMG}hero-tijolos.webp")`;
+
+  const fonte = () => {
+    if (video.childElementCount) return;
+    const add = (src: string, type: string) => {
+      const s = document.createElement("source");
+      s.src = IMG + src;
+      s.type = type;
+      video.append(s);
+    };
+    if (celular) add("hero-filme-1280.mp4", "video/mp4");
+    else {
+      add("hero-filme-1920.webm", "video/webm");
+      add("hero-filme-1920.mp4", "video/mp4");
+    }
+    video.load();
+  };
+  const estado = (e: "tocando" | "titulo" | "pronto") => {
+    hero.classList.toggle("filme-tocando", e !== "pronto");
+    hero.classList.toggle("filme-sem-titulo", e === "tocando");
+  };
+  const terminar = () => {
+    estado("pronto");
+    replay.hidden = false;
+  };
+  const tocar = () => {
+    fonte();
+    replay.hidden = true;
+    estado("titulo");
+    video.currentTime = 0;
+    video.play().catch(terminar);
+  };
+
+  video.addEventListener("timeupdate", () => {
+    const t = video.currentTime;
+    if (t >= FILME_KIT_PRONTO) estado("pronto");
+    else if (t >= FILME_TITULO_SAI) estado("tocando");
+  });
+  video.addEventListener("ended", terminar);
+  video.addEventListener("error", terminar);
+  replay.addEventListener("click", tocar);
+
+  // fora da tela, pausa; ao voltar, continua de onde parou
+  new IntersectionObserver(([e]) => {
+    if (video.ended || replay.hidden === false) return;
+    if (e.isIntersecting) video.play().catch(() => {});
+    else video.pause();
+  }).observe(hero);
+
+  if (reduzido || conexao?.saveData || scrollY > 200) {
+    replay.innerHTML = '<span aria-hidden="true">▶</span> Ver a montagem';
+    terminar();
     return;
   }
-  hero.classList.add("onb-intro");
-  img.style.opacity = "0";
-  const ctx = canvas.getContext("2d")!;
-  const dpr = Math.min(devicePixelRatio || 1, 2);
-  let W = 0;
-  let H = 0;
-  const medir = () => {
-    W = hero.clientWidth;
-    H = hero.clientHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  };
-  medir();
-  addEventListener("resize", medir);
-
-  // pseudoaleatório fixo para a cena sair igual sempre
-  let semente = 9;
-  const rnd = () => ((semente = (semente * 16807) % 2147483647) - 1) / 2147483646;
-  const brasas: Brasa[] = [];
-  for (let i = 0; i < 340; i++) {
-    const ang = rnd() * Math.PI * 2;
-    const d = Math.pow(rnd(), 0.6);
-    brasas.push({
-      x: Math.cos(ang) * d * 1.25,
-      y: Math.sin(ang) * d * 0.55,
-      r: 0.008 + rnd() * 0.022,
-      // de dentro para fora: a primeira brasa é a do centro
-      acende: i === 0 ? 0 : 0.06 + Math.pow(d, 0.9) * 0.55 + rnd() * 0.08,
-      fase: rnd() * Math.PI * 2,
-      vel: 2 + rnd() * 3,
-      // contorno irregular de pedra de carvão (7 pontas com raios diferentes)
-      forma: Array.from({ length: 7 }, () => 0.7 + rnd() * 0.45),
-      giro: rnd() * Math.PI * 2,
-    });
-  }
-  brasas[0].x = 0;
-  brasas[0].y = 0;
-  brasas[0].r = 0.03;
-  const faiscas: Faisca[] = [];
-
-  const DUR = 3600;
-  const t0 = performance.now();
-  const centro = () => ({ x: W * 0.5, y: H * 0.64 });
-  const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-  let revelou = false;
-  let fim = false;
-
-  const cor = (calor: number, a: number) =>
-    // do vermelho escuro ao laranja; só o miolo chega perto do amarelo
-    `rgba(255,${Math.round(70 + calor * 110)},${Math.round(15 + calor * 30)},${a})`;
-
-  function pedra(b: Brasa, x: number, y: number, r: number) {
-    ctx.beginPath();
-    b.forma.forEach((k, i) => {
-      const a = b.giro + (i / b.forma.length) * Math.PI * 2;
-      const px = x + Math.cos(a) * r * k;
-      const py = y + Math.sin(a) * r * k * 0.8;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    });
-    ctx.closePath();
-  }
-
-  function quadro(agora: number) {
-    if (fim) return;
-    const t = Math.min((agora - t0) / DUR, 1);
-    const zoom = 1 + 9 * (1 - easeInOut(Math.min(Math.max((t - 0.05) / 0.68, 0), 1)));
-    const c = centro();
-    const escala = Math.min(W, H * 1.6) * 0.5 * zoom;
-    ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "#070504";
-    ctx.fillRect(0, 0, W, H);
-    for (const b of brasas) {
-      const vida = (t - b.acende) / 0.12;
-      if (vida <= 0) continue;
-      const liga = Math.min(vida, 1);
-      const pisca = 0.78 + 0.22 * Math.sin((agora / 1000) * b.vel + b.fase);
-      const calor = liga * pisca;
-      const x = c.x + b.x * escala;
-      const y = c.y + b.y * escala;
-      const r = Math.max(b.r * escala, 0.8);
-      if (x < -r * 3 || x > W + r * 3 || y < -r * 3 || y > H + r * 3) continue;
-      // brilho em volta da pedra
-      ctx.globalCompositeOperation = "lighter";
-      const halo = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 2.2);
-      halo.addColorStop(0, cor(calor * 0.8, 0.42 * liga));
-      halo.addColorStop(1, "rgba(120,20,0,0)");
-      ctx.fillStyle = halo;
-      ctx.beginPath();
-      ctx.arc(x, y, r * 2.2, 0, Math.PI * 2);
-      ctx.fill();
-      // a pedra: escura nas bordas, em brasa no miolo
-      ctx.globalCompositeOperation = "source-over";
-      const corpo = ctx.createRadialGradient(x, y, 0, x, y, r);
-      corpo.addColorStop(0, cor(calor, 0.95 * liga));
-      corpo.addColorStop(
-        0.55,
-        `rgba(${Math.round(120 + calor * 80)},${Math.round(28 + calor * 22)},8,${liga})`,
-      );
-      corpo.addColorStop(1, `rgba(28,16,12,${liga})`);
-      ctx.fillStyle = corpo;
-      pedra(b, x, y, r);
-      ctx.fill();
-      if (rnd() < 0.01 * liga && faiscas.length < 120)
-        faiscas.push({
-          x,
-          y,
-          vx: (rnd() - 0.5) * 0.6,
-          vy: -0.6 - rnd() * 1.6,
-          vida: 0,
-          max: 50 + rnd() * 60,
-        });
-    }
-    ctx.globalCompositeOperation = "lighter";
-    for (let i = faiscas.length - 1; i >= 0; i--) {
-      const f = faiscas[i];
-      f.vida++;
-      f.x += f.vx + Math.sin(f.vida / 9) * 0.3;
-      f.y += f.vy;
-      const a = 1 - f.vida / f.max;
-      if (a <= 0) {
-        faiscas.splice(i, 1);
-        continue;
-      }
-      ctx.fillStyle = cor(0.9, a);
-      ctx.fillRect(f.x, f.y, 1.8, 1.8);
-    }
-    if (!revelou && t > 0.7) {
-      revelou = true;
-      revelar();
-    }
-    if (t < 1 || faiscas.length) requestAnimationFrame(quadro);
-  }
-
-  function revelar() {
-    const c = centro();
-    img.style.transformOrigin = `${(c.x / W) * 100}% ${(c.y / H) * 100}%`;
-    img.animate(
-      [
-        { opacity: 0, transform: "scale(1.45)", filter: "blur(12px) brightness(0.6)" },
-        { opacity: 1, transform: "scale(1)", filter: "blur(0) brightness(1)" },
-      ],
-      { duration: 1600, easing: EASE_OUT, fill: "forwards" },
-    );
-    img.style.opacity = "";
-    canvas.animate([{ opacity: 1 }, { opacity: 0 }], {
-      duration: 1100,
-      delay: 500,
-      easing: "ease",
-      fill: "forwards",
-    });
-    textos.forEach((el, i) =>
-      el.animate(
-        [
-          { opacity: 0, transform: "translateY(18px)" },
-          { opacity: 1, transform: "none" },
-        ],
-        { duration: 800, delay: 900 + i * 90, easing: EASE_OUT, fill: "forwards" },
-      ),
-    );
-    setTimeout(() => {
-      fim = true;
-      hero.classList.remove("onb-intro");
-      hero.classList.add("onb-intro-fim");
-      removeEventListener("resize", medir);
-    }, 2400);
-  }
-
-  requestAnimationFrame(quadro);
+  tocar();
 }
 
 // ---------- destaques: um vídeo por cartão, passa sozinho quando o vídeo acaba ----------

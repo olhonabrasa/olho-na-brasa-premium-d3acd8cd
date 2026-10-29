@@ -48,9 +48,12 @@ export function topo() {
   </div>
 
   <section class="onb-hero onb-escuro" aria-label="Kit Premium em Inox">
-    <img class="onb-hero-img" src="${IMG}kit-frente.webp" alt="Kit Premium Olho na Brasa em inox espelhado, com grelhas, espetos e gaveta, montado sobre o braseiro" width="2000" height="1802" fetchpriority="high" decoding="async">
-    <canvas class="onb-brasa" aria-hidden="true"></canvas>
+    <div class="onb-hero-palco">
+      <img class="onb-hero-img" src="${IMG}hero-filme-fim.webp" alt="Kit Premium Olho na Brasa montado no nicho de tijolos: suporte suspenso, grelha de descanso, duas grelhas uruguaias e dois espetos em inox espelhado" width="1920" height="1080" fetchpriority="high" decoding="async">
+      <video class="onb-hero-video" muted playsinline preload="auto" poster="${IMG}hero-filme-inicio.webp" aria-hidden="true"></video>
+    </div>
     <div class="onb-hero-veu" aria-hidden="true"></div>
+    <button type="button" class="onb-hero-replay" hidden><span aria-hidden="true">↻</span> Ver a montagem de novo</button>
     <p class="onb-marca">Olho na Brasa</p>
     <div class="onb-hero-base">
       <div class="onb-hero-esq">

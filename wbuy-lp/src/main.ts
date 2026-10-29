@@ -54,11 +54,11 @@ import {
 import * as D from "./dobras";
 import {
   abrirWhats,
-  aberturaBrasa,
   antesDepois,
   barrasFixas,
   carrosselDestaques,
   entradasSuaves,
+  filmeTopo,
   modalDeVideo,
   setasCarrossel,
   videosNaHora,
@@ -127,7 +127,7 @@ function iniciar(root: HTMLElement) {
   const $ = <T extends Element = HTMLElement>(sel: string) => root.querySelector(sel) as T;
 
   // ---------- dobras ----------
-  aberturaBrasa(root, reduced);
+  filmeTopo(root, reduced);
   const destaques = carrosselDestaques(root, reduced);
   antesDepois(root);
   setasCarrossel(root);

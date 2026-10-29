@@ -322,7 +322,7 @@ html.onb-lp-ativa body {
   font-weight: 600;
 }
 
-/* ---------- 1. topo: a brasa acende e o kit aparece ---------- */
+/* ---------- 1. topo: o filme da montagem ---------- */
 #onb-kit-lp .onb-hero {
   position: relative;
   height: 100vh;
@@ -331,32 +331,74 @@ html.onb-lp-ativa body {
   max-height: 1080px;
   padding: 0;
   overflow: hidden;
-  background: #060504;
+  /* a parede de tijolos do nicho (imagem posta pelo script) continua fora do vídeo no celular */
+  background: #120b07 center / cover no-repeat;
   isolation: isolate;
 }
-#onb-kit-lp .onb-hero-img {
+#onb-kit-lp .onb-hero-palco {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+#onb-kit-lp .onb-hero-img,
+#onb-kit-lp .onb-hero-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 58%;
-  z-index: 0;
+  object-position: 50% 50%;
 }
-#onb-kit-lp .onb-brasa {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
+#onb-kit-lp .onb-hero.filme-tocando .onb-hero-img {
+  visibility: hidden;
 }
-#onb-kit-lp .onb-hero.onb-intro .onb-hero-img,
-#onb-kit-lp .onb-hero.onb-intro :is(.onb-marca, .onb-hero-esq, .onb-hero-dir) {
-  opacity: 0;
-}
-#onb-kit-lp .onb-hero:not(.onb-intro) .onb-brasa {
+#onb-kit-lp .onb-hero:not(.filme-tocando) .onb-hero-video:not([src]):not(:has(source)) {
   display: none;
+}
+#onb-kit-lp .onb-hero-replay {
+  position: absolute;
+  z-index: 4;
+  top: 16px;
+  right: max(20px, calc((100% - 1200px) / 2));
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.42);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background-color 0.2s ease,
+    transform 0.16s var(--onb-ease);
+}
+#onb-kit-lp .onb-hero-replay:hover {
+  background: rgb(0 0 0 / 0.6);
+}
+#onb-kit-lp .onb-hero-replay:active {
+  transform: scale(0.96);
+}
+#onb-kit-lp .onb-hero-replay[hidden] {
+  display: none;
+}
+/* computador: o título sai de cena enquanto as peças entram e volta com o kit pronto */
+#onb-kit-lp :is(.onb-hero-veu, .onb-marca, .onb-hero-esq, .onb-hero-dir p) {
+  transition:
+    opacity 0.9s var(--onb-ease),
+    transform 0.9s var(--onb-ease);
+}
+@media (min-width: 900px) {
+  #onb-kit-lp
+    .onb-hero.filme-sem-titulo
+    :is(.onb-hero-veu, .onb-marca, .onb-hero-esq, .onb-hero-dir p) {
+    opacity: 0;
+  }
+  #onb-kit-lp .onb-hero.filme-sem-titulo .onb-hero-esq {
+    transform: translateY(14px);
+  }
 }
 #onb-kit-lp .onb-hero-veu {
   position: absolute;
@@ -2409,8 +2451,22 @@ html.onb-lp-ativa body {
     width: 100%;
     justify-content: center;
   }
-  #onb-kit-lp .onb-hero-img {
-    object-position: 46% 55%;
+  /* celular: o filme (16:9) fica no alto, um pouco maior que a tela, e se funde na parede de tijolos */
+  #onb-kit-lp .onb-hero-palco {
+    inset: 9svh -9% auto;
+    aspect-ratio: 16 / 9;
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      #000 16%,
+      #000 84%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+  }
+  #onb-kit-lp .onb-hero-replay {
+    top: calc(9svh + 10px);
+    right: 20px;
   }
   #onb-kit-lp .onb-dest-card {
     aspect-ratio: 4 / 5;
