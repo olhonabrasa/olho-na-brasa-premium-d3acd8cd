@@ -335,10 +335,21 @@ html.onb-lp-ativa body {
   background: #120b07 center / cover no-repeat;
   isolation: isolate;
 }
+#onb-kit-lp .onb-hero {
+  container-type: size;
+}
+/* em tela muito larga o vídeo não estica além de ~16:9 (cortaria o topo e a base do kit);
+   as laterais se fundem na parede de tijolos do fundo */
 #onb-kit-lp .onb-hero-palco {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: min(100%, 190cqh);
+  transform: translateX(-50%);
   z-index: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
 }
 #onb-kit-lp .onb-hero-img,
 #onb-kit-lp .onb-hero-video {
@@ -2454,6 +2465,8 @@ html.onb-lp-ativa body {
   /* celular: o filme (16:9) fica no alto, um pouco maior que a tela, e se funde na parede de tijolos */
   #onb-kit-lp .onb-hero-palco {
     inset: 9svh -9% auto;
+    width: auto;
+    transform: none;
     aspect-ratio: 16 / 9;
     -webkit-mask-image: linear-gradient(
       180deg,
