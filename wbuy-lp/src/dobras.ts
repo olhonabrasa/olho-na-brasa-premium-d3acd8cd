@@ -154,8 +154,8 @@ export function montador(s: Inicial) {
         <canvas role="img" aria-label="Kit em 3D"></canvas>
         <div class="onb-fallback" aria-hidden="true"></div>
         <div class="onb-medidas-rot" aria-hidden="true">
-          <span class="onb-rot-a"><b>A</b> Largura da boca<i> da sua churrasqueira</i> <em></em></span>
-          <span class="onb-rot-b"><b>B</b> Comprimento interno<i> da sua churrasqueira</i> <em></em></span>
+          <span class="onb-rot-a"><b>A</b><span>Largura da boca<i> da sua churrasqueira</i></span><em></em></span>
+          <span class="onb-rot-b"><b>B</b><span>Comprimento interno<i> da sua churrasqueira</i></span><em></em></span>
         </div>
         <div class="onb-hotspots"></div>
         <div class="onb-pop" role="dialog" aria-label="Peça escolhida" hidden></div>
@@ -299,6 +299,16 @@ export function acessorios() {
   </section>`;
 }
 
+const chevron = (d: string) =>
+  `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+/** Setas para quem está no computador e não tem como arrastar o carrossel (só aparecem com mouse). */
+const setas = (item: string) => `
+    <div class="onb-dentro onb-setas" data-setas>
+      <button type="button" data-seta="-1" aria-label="${item} anterior">${chevron("M15 5l-7 7 7 7")}</button>
+      <button type="button" data-seta="1" aria-label="Próximo ${item}">${chevron("M9 5l7 7-7 7")}</button>
+    </div>`;
+
 export function projetos() {
   return `
   <section class="onb-projetos onb-escuro" aria-labelledby="onb-proj-t">
@@ -319,6 +329,7 @@ export function projetos() {
       </article>`,
       ).join("")}
     </div>
+    ${setas("projeto")}
     <div class="onb-dentro onb-proj-cta onb-sobe">
       <p><b>Sua churrasqueira é diferente?</b> A fábrica faz o kit e o revestimento em inox sob medida para o seu projeto.</p>
       <button type="button" class="onb-btn-sec onb-btn-sec-claro" data-whats>Falar com a fábrica</button>
@@ -349,7 +360,7 @@ export function avaliacoes() {
       <h2 id="onb-rev-t" class="onb-centro">O que nossos clientes<br><span>dizem no Google.</span></h2>
       <div class="onb-rev-resumo">
         <div class="onb-rev-g">${GOOGLE_G}<span>Google</span></div>
-        <div class="onb-rev-nota"><b>4,7</b><span class="onb-rev-estrelas" aria-label="4,7 de 5 estrelas"><i style="--p:94%"></i></span></div>
+        <div class="onb-rev-nota"><span class="onb-rev-estrelas" aria-label="4,7 de 5 estrelas"><i style="--p:94%"></i></span></div>
         <p>41 avaliações</p>
         <a href="${MAPS}" target="_blank" rel="noopener">Ver todas no Google Maps ›</a>
       </div>

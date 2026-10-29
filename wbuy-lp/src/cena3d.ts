@@ -457,11 +457,11 @@ export function posicionarDefumador(peca: THREE.Object3D, larguraM: number, cook
 // ---------- medidas A e B (setas sobre a cena) ----------
 
 export { medidasGeo };
-/** Setas brancas com pontas e marcas de parede, sempre visíveis por cima do kit. */
+/** Setas pretas com pontas e marcas de parede, sempre visíveis por cima do kit (o inox e a parede são claros). */
 export function criarSetas(geo: MedidasGeo) {
   const g = new THREE.Group();
   g.name = "medidas";
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true });
+  const mat = new THREE.MeshBasicMaterial({ color: 0x0a0a0a, depthTest: false, transparent: true });
   const seta = (p1: THREE.Vector3Tuple, p2: THREE.Vector3Tuple) => {
     const a = new THREE.Vector3(...p1);
     const b = new THREE.Vector3(...p2);
@@ -471,7 +471,7 @@ export function criarSetas(geo: MedidasGeo) {
       tubo(
         a.clone().addScaledVector(dir, ponta),
         b.clone().addScaledVector(dir, -ponta),
-        0.0028,
+        0.0034,
         mat,
         8,
       ),

@@ -60,6 +60,7 @@ import {
   carrosselDestaques,
   entradasSuaves,
   modalDeVideo,
+  setasCarrossel,
   videosNaHora,
 } from "./interacoes";
 import { medidasGeo, meio } from "./medidas";
@@ -129,6 +130,7 @@ function iniciar(root: HTMLElement) {
   aberturaBrasa(root, reduced);
   const destaques = carrosselDestaques(root, reduced);
   antesDepois(root);
+  setasCarrossel(root);
   modalDeVideo(root, (aberto) => destaques.pausar(aberto));
   videosNaHora(root);
   entradasSuaves(root, reduced);

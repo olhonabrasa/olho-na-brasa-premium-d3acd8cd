@@ -407,6 +407,32 @@ export function videosNaHora(root: HTMLElement) {
   });
 }
 
+// ---------- setas dos carrosséis (desktop) ----------
+
+/** Cada bloco [data-setas] comanda o trilho logo antes dele: anda um cartão e apaga a seta no fim. */
+export function setasCarrossel(root: HTMLElement) {
+  root.querySelectorAll<HTMLElement>("[data-setas]").forEach((setas) => {
+    const trilho = setas.previousElementSibling as HTMLElement | null;
+    if (!trilho) return;
+    const [antes, depois] = setas.querySelectorAll<HTMLButtonElement>("[data-seta]");
+    const atualizar = () => {
+      const fim = trilho.scrollWidth - trilho.clientWidth - 4;
+      antes.disabled = trilho.scrollLeft <= 4;
+      depois.disabled = trilho.scrollLeft >= fim;
+    };
+    setas.addEventListener("click", (ev) => {
+      const b = (ev.target as Element).closest<HTMLButtonElement>("[data-seta]");
+      if (!b) return;
+      const cartao = trilho.firstElementChild as HTMLElement | null;
+      const passo = (cartao?.offsetWidth ?? trilho.clientWidth * 0.8) + 20;
+      trilho.scrollBy({ left: Number(b.dataset.seta) * passo, behavior: "smooth" });
+    });
+    trilho.addEventListener("scroll", atualizar, { passive: true });
+    addEventListener("resize", atualizar);
+    atualizar();
+  });
+}
+
 // ---------- entradas suaves e barras fixas ----------
 
 export function entradasSuaves(root: HTMLElement, reduzido: boolean) {
