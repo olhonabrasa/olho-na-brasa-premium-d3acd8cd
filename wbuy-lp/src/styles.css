@@ -322,62 +322,98 @@ html.onb-lp-ativa body {
   font-weight: 600;
 }
 
-/* ---------- 1. topo: o filme da montagem ---------- */
+/* ---------- 1. topo: título em cima, o vídeo do kit embaixo (nada cobre o produto) ---------- */
 #onb-kit-lp .onb-hero {
+  /* largura que deixa título + vídeo 16:9 inteiros na primeira dobra */
+  --onb-hero-w: clamp(640px, (100svh - 370px) * 16 / 9, 1200px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "esq dir"
+    "midia midia";
+  align-items: end;
+  gap: 28px 40px;
+  padding: clamp(28px, 4vh, 44px) max(20px, calc((100% - var(--onb-hero-w)) / 2))
+    clamp(36px, 6vh, 64px);
+  background: #060504;
+}
+#onb-kit-lp .onb-hero-esq {
+  grid-area: esq;
+}
+#onb-kit-lp .onb-hero-dir {
+  grid-area: dir;
+  display: grid;
+  justify-items: end;
+  gap: 14px;
+  text-align: right;
+}
+#onb-kit-lp .onb-marca {
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--onb-claro-suave);
+}
+#onb-kit-lp .onb-hero h1 {
+  font-size: clamp(44px, 6vw, 84px);
+  line-height: 0.96;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #fff;
+}
+#onb-kit-lp .onb-prova {
+  margin-top: 14px;
+  font-size: 15px;
+  color: rgb(255 255 255 / 0.78);
+}
+#onb-kit-lp .onb-estrelas {
+  color: #f5a623;
+  letter-spacing: 2px;
+  margin-right: 6px;
+}
+#onb-kit-lp .onb-hero-dir p {
+  font-size: 17px;
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.82);
+}
+#onb-kit-lp .onb-hero-midia {
+  grid-area: midia;
   position: relative;
-  height: 100vh;
-  height: 100svh;
-  min-height: 600px;
-  max-height: 1080px;
-  padding: 0;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
-  /* a parede de tijolos do nicho (imagem posta pelo script) continua fora do vídeo no celular */
-  background: #120b07 center / cover no-repeat;
-  isolation: isolate;
+  border-radius: 18px;
+  background: #1a1918;
 }
-#onb-kit-lp .onb-hero {
-  container-type: size;
-}
-/* em tela muito larga o vídeo não estica além de ~16:9 (cortaria o topo e a base do kit);
-   as laterais se fundem na parede de tijolos do fundo */
-#onb-kit-lp .onb-hero-palco {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: min(100%, 190cqh);
-  transform: translateX(-50%);
-  z-index: 0;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
-}
-#onb-kit-lp .onb-hero-img,
+#onb-kit-lp .onb-hero-poster,
 #onb-kit-lp .onb-hero-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 50% 50%;
+  object-fit: contain;
 }
-#onb-kit-lp .onb-hero.filme-tocando .onb-hero-img {
-  visibility: hidden;
+/* o vídeo só aparece por cima do pôster quando o primeiro quadro já está na tela */
+#onb-kit-lp .onb-hero-video {
+  opacity: 0;
+  transition: opacity 0.35s ease;
 }
-#onb-kit-lp .onb-hero:not(.filme-tocando) .onb-hero-video:not([src]):not(:has(source)) {
-  display: none;
+#onb-kit-lp .onb-hero.video-ativo .onb-hero-video {
+  opacity: 1;
 }
+/* canto inferior direito: chão de mármore, sem produto embaixo */
 #onb-kit-lp .onb-hero-replay {
   position: absolute;
-  z-index: 4;
-  top: 16px;
-  right: max(20px, calc((100% - 1200px) / 2));
+  z-index: 1;
+  right: 14px;
+  bottom: 14px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   height: 36px;
   padding: 0 16px;
   border-radius: 999px;
-  background: rgb(0 0 0 / 0.42);
+  background: rgb(0 0 0 / 0.55);
   backdrop-filter: blur(12px);
   color: #fff;
   font-size: 13px;
@@ -387,7 +423,7 @@ html.onb-lp-ativa body {
     transform 0.16s var(--onb-ease);
 }
 #onb-kit-lp .onb-hero-replay:hover {
-  background: rgb(0 0 0 / 0.6);
+  background: rgb(0 0 0 / 0.72);
 }
 #onb-kit-lp .onb-hero-replay:active {
   transform: scale(0.96);
@@ -395,81 +431,34 @@ html.onb-lp-ativa body {
 #onb-kit-lp .onb-hero-replay[hidden] {
   display: none;
 }
-/* computador: o título sai de cena enquanto as peças entram e volta com o kit pronto */
-#onb-kit-lp :is(.onb-hero-veu, .onb-marca, .onb-hero-esq, .onb-hero-dir p) {
-  transition:
-    opacity 0.9s var(--onb-ease),
-    transform 0.9s var(--onb-ease);
-}
-@media (min-width: 900px) {
-  #onb-kit-lp
-    .onb-hero.filme-sem-titulo
-    :is(.onb-hero-veu, .onb-marca, .onb-hero-esq, .onb-hero-dir p) {
-    opacity: 0;
+/* celular: vídeo 4:5 de borda a borda, pelo menos 55% da altura da tela, e o botão de compra embaixo dele */
+@media (max-width: 767px) {
+  #onb-kit-lp .onb-hero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "esq"
+      "midia"
+      "dir";
+    gap: 22px;
+    padding: 24px 20px 32px;
   }
-  #onb-kit-lp .onb-hero.filme-sem-titulo .onb-hero-esq {
-    transform: translateY(14px);
+  #onb-kit-lp .onb-hero-midia {
+    margin-inline: -20px;
+    aspect-ratio: 4 / 5;
+    min-height: 55svh;
+    border-radius: 0;
   }
-}
-#onb-kit-lp .onb-hero-veu {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  background:
-    linear-gradient(0deg, rgb(6 5 4 / 0.92) 0%, rgb(6 5 4 / 0.45) 30%, transparent 58%),
-    linear-gradient(180deg, rgb(6 5 4 / 0.55) 0%, transparent 18%);
-  pointer-events: none;
-}
-#onb-kit-lp .onb-marca {
-  position: absolute;
-  z-index: 3;
-  top: 22px;
-  left: max(20px, calc((100% - 1200px) / 2));
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--onb-claro-txt);
-}
-#onb-kit-lp .onb-hero-base {
-  position: absolute;
-  z-index: 3;
-  left: 0;
-  right: 0;
-  bottom: clamp(28px, 6vh, 64px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 28px;
-  padding-inline: max(20px, calc((100% - 1200px) / 2));
-}
-#onb-kit-lp .onb-hero h1 {
-  font-size: clamp(48px, 8.4vw, 116px);
-  line-height: 0.96;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: #fff;
-}
-#onb-kit-lp .onb-prova {
-  margin-top: 16px;
-  font-size: 15px;
-  color: rgb(255 255 255 / 0.78);
-}
-#onb-kit-lp .onb-estrelas {
-  color: #f5a623;
-  letter-spacing: 2px;
-  margin-right: 6px;
-}
-#onb-kit-lp .onb-hero-dir {
-  display: grid;
-  justify-items: end;
-  gap: 16px;
-  text-align: right;
-}
-#onb-kit-lp .onb-hero-dir p {
-  font-size: 17px;
-  line-height: 1.4;
-  color: rgb(255 255 255 / 0.82);
+  #onb-kit-lp .onb-hero-dir {
+    justify-items: stretch;
+    text-align: left;
+  }
+  #onb-kit-lp .onb-hero-dir .onb-btn {
+    justify-content: center;
+  }
+  #onb-kit-lp .onb-hero-replay {
+    right: 12px;
+    bottom: 12px;
+  }
 }
 
 /* ---------- 2. destaques (carrossel de vídeos) ---------- */
@@ -2448,38 +2437,6 @@ html.onb-lp-ativa body {
 @media (max-width: 899px) {
   #onb-kit-lp .onb-barra-produto {
     display: none;
-  }
-  #onb-kit-lp .onb-hero-base {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  #onb-kit-lp .onb-hero-dir {
-    justify-items: start;
-    text-align: left;
-    width: 100%;
-  }
-  #onb-kit-lp .onb-hero-dir .onb-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  /* celular: o filme (16:9) fica no alto, um pouco maior que a tela, e se funde na parede de tijolos */
-  #onb-kit-lp .onb-hero-palco {
-    inset: 9svh -9% auto;
-    width: auto;
-    transform: none;
-    aspect-ratio: 16 / 9;
-    -webkit-mask-image: linear-gradient(
-      180deg,
-      transparent 0%,
-      #000 16%,
-      #000 84%,
-      transparent 100%
-    );
-    mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
-  }
-  #onb-kit-lp .onb-hero-replay {
-    top: calc(9svh + 10px);
-    right: 20px;
   }
   #onb-kit-lp .onb-dest-card {
     aspect-ratio: 4 / 5;

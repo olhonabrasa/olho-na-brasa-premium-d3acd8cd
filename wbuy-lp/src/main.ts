@@ -1003,6 +1003,20 @@ function iniciar(root: HTMLElement) {
 
 const raiz = document.getElementById("onb-kit-lp");
 if (raiz && !raiz.classList.contains("onb-pronto")) {
+  // o pôster do topo é o LCP: pede antes do CSS e do resto da página (o <picture> escolhe o mesmo arquivo)
+  for (const [media, nome] of [
+    ["(max-width:767px)", "hero-poster-mobile"],
+    ["(min-width:768px)", "hero-poster-desktop"],
+  ]) {
+    const pre = document.createElement("link");
+    pre.rel = "preload";
+    pre.as = "image";
+    pre.type = "image/avif";
+    pre.media = media;
+    pre.href = `${IMG}${nome}.avif`;
+    pre.setAttribute("fetchpriority", "high");
+    document.head.append(pre);
+  }
   const estilo = document.createElement("style");
   estilo.id = "onb-kit-lp-css";
   estilo.textContent = css;

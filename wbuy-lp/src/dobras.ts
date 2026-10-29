@@ -48,22 +48,31 @@ export function topo() {
   </div>
 
   <section class="onb-hero onb-escuro" aria-label="Kit Premium em Inox">
-    <div class="onb-hero-palco">
-      <img class="onb-hero-img" src="${IMG}hero-filme-fim.webp" alt="Kit Premium Olho na Brasa montado no nicho de tijolos: suporte suspenso, grelha de descanso, duas grelhas uruguaias e dois espetos em inox espelhado" width="1920" height="1080" fetchpriority="high" decoding="async">
-      <video class="onb-hero-video" muted playsinline preload="auto" poster="${IMG}hero-filme-inicio.webp" aria-hidden="true"></video>
+    <div class="onb-hero-esq">
+      <p class="onb-marca">Olho na Brasa</p>
+      <h1>Kit Premium<br>em Inox.</h1>
+      <p class="onb-prova"><span class="onb-estrelas" aria-hidden="true">★★★★★</span> +100 mil churrasqueiras entregues</p>
     </div>
-    <div class="onb-hero-veu" aria-hidden="true"></div>
-    <button type="button" class="onb-hero-replay" hidden><span aria-hidden="true">↻</span> Ver a montagem de novo</button>
-    <p class="onb-marca">Olho na Brasa</p>
-    <div class="onb-hero-base">
-      <div class="onb-hero-esq">
-        <h1>Kit Premium<br>em Inox.</h1>
-        <p class="onb-prova"><span class="onb-estrelas" aria-hidden="true">★★★★★</span> +100 mil churrasqueiras entregues</p>
-      </div>
-      <div class="onb-hero-dir">
-        <p>Feito na medida da sua churrasqueira.<br>15 anos de garantia.</p>
-        <button type="button" class="onb-btn onb-btn-grande" data-ir-montador>Monte o seu em 3D</button>
-      </div>
+    <div class="onb-hero-dir">
+      <p>Feito na medida da sua churrasqueira.<br>15 anos de garantia.</p>
+      <button type="button" class="onb-btn onb-btn-grande" data-ir-montador>Monte o seu em 3D</button>
+    </div>
+    <div class="onb-hero-midia">
+      <picture>
+        <source media="(max-width:767px)" srcset="${IMG}hero-poster-mobile.avif" type="image/avif">
+        <source media="(max-width:767px)" srcset="${IMG}hero-poster-mobile.webp" type="image/webp">
+        <source media="(max-width:767px)" srcset="${IMG}hero-poster-mobile.jpg">
+        <source srcset="${IMG}hero-poster-desktop.avif" type="image/avif">
+        <source srcset="${IMG}hero-poster-desktop.webp" type="image/webp">
+        <img class="onb-hero-poster" src="${IMG}hero-poster-desktop.jpg" alt="Kit Premium Olho na Brasa em inox no nicho de mármore, com picanha na grelha, espetos e grelha de descanso" width="1280" height="720" fetchpriority="high" decoding="async">
+      </picture>
+      <video class="onb-hero-video" muted playsinline preload="none" aria-hidden="true">
+        <source media="(max-width:767px)" src="${IMG}hero-mobile-4x5.webm" type="video/webm">
+        <source media="(max-width:767px)" src="${IMG}hero-mobile-4x5.mp4" type="video/mp4">
+        <source src="${IMG}hero-desktop.webm" type="video/webm">
+        <source src="${IMG}hero-desktop.mp4" type="video/mp4">
+      </video>
+      <button type="button" class="onb-hero-replay" hidden><span aria-hidden="true">↻</span> Ver a montagem de novo</button>
     </div>
   </section>`;
 }
