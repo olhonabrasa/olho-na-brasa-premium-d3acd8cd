@@ -1,1 +1,14 @@
 project_id = "nstqepelvtrktcdcsezj"
+
+# Edge Functions do checkout. Deploy no projeto da LP (pwpfpseatkwluahjqclc):
+#   npx supabase functions deploy checkout-order checkout-pay mp-webhook --project-ref pwpfpseatkwluahjqclc --no-verify-jwt
+# As chaves publishable novas não são JWT; a proteção é feita dentro de cada função
+# (origem permitida, token do pedido, rate limit, assinatura do webhook).
+[functions.checkout-order]
+verify_jwt = false
+
+[functions.checkout-pay]
+verify_jwt = false
+
+[functions.mp-webhook]
+verify_jwt = false

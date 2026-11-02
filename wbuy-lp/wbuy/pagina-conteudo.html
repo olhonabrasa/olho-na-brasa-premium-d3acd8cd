@@ -1,0 +1,22 @@
+<!--
+  LP "Monte seu kit" — cole TUDO isto no editor da página de conteúdo da Wbuy,
+  no modo código-fonte (botão "Código-fonte" / "<>" do editor), tipo Texto/HTML.
+  O montador, o 3D e o carrinho vêm do script abaixo; nada mais precisa mudar no tema.
+-->
+<style>
+  /* esconde o título e o "Página inicial > ..." da página de conteúdo e libera a largura toda */
+  #informacoes .breadcrumbs,
+  #informacoes .central > .titulo { display: none !important; }
+  #informacoes .central { max-width: none !important; width: 100% !important; padding: 0 !important; }
+  #informacoes article.texto { margin: 0 !important; padding: 0 !important; }
+  /* o cabeçalho da loja é fixo: o 3D gruda logo abaixo dele */
+  #onb-kit-lp { --onb-topo: var(--topo_altura, 0px); min-height: 80vh; }
+  @media (max-width: 800px) { #onb-kit-lp { --onb-topo: var(--topo_altura_mobile, 0px); } }
+</style>
+<link rel="preconnect" href="https://premium.olhonabrasa.com.br" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<div id="onb-kit-lp">
+  <p style="padding:80px 20px;text-align:center;font:16px system-ui;color:#6b665f">Carregando o montador do kit…</p>
+</div>
+<script type="module" src="https://premium.olhonabrasa.com.br/wbuy-lp/kit-builder.js"></script>

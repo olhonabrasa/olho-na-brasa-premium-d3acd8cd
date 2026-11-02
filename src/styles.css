@@ -390,3 +390,89 @@
   .final-cta-section { text-align: center; }
   .footer-content { max-width: 720px; }
 }
+
+/* ================================================================
+   CONFIGURADOR + CHECKOUT
+   ================================================================ */
+:root {
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+::selection { background: color-mix(in oklab, var(--primary) 45%, transparent); color: var(--foreground); }
+input, textarea { caret-color: var(--primary); }
+html { scrollbar-color: var(--border-strong) var(--background); }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* feedback físico no toque */
+.press { transition: transform 140ms var(--ease-out-strong), background-color 200ms ease, border-color 200ms ease, color 200ms ease; }
+.press:active:not(:disabled) { transform: scale(0.97); }
+
+.cta-fire { box-shadow: 0 10px 28px -8px color-mix(in oklab, var(--primary) 70%, transparent); }
+@media (hover: hover) and (pointer: fine) {
+  .cta-fire:hover { background: var(--primary-strong); }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--card) 0%, var(--card-hover) 50%, var(--card) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shine 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shine { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* slider de medida */
+.measure-range { -webkit-appearance: none; appearance: none; height: 44px; background: transparent; cursor: pointer; }
+.measure-range::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary) 0 var(--pos), var(--border-strong) var(--pos) 100%);
+}
+.measure-range::-moz-range-track { height: 6px; border-radius: 999px; background: var(--border-strong); }
+.measure-range::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--primary); }
+.measure-range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%;
+  background: var(--foreground); border: 3px solid var(--primary);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.45);
+  transition: transform 140ms var(--ease-out-strong);
+}
+.measure-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--foreground); border: 3px solid var(--primary); }
+.measure-range:active::-webkit-slider-thumb { transform: scale(1.12); }
+.measure-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 25%, transparent); }
+
+/* o preço "assenta" quando muda de faixa */
+.price-tick { animation: price-tick 320ms var(--ease-out-strong); }
+@keyframes price-tick { from { opacity: 0.35; transform: translateY(6px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+
+.guide-reveal { transition: grid-template-rows 320ms var(--ease-out-strong); }
+
+.field-wrap { display: block; }
+.field-wrap .field-base:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent); }
+.field-error .field-base { border-color: var(--danger); }
+
+/* painel do checkout: gaveta no celular, lateral no desktop */
+.checkout-overlay[data-state="open"] { animation: co-fade 240ms ease-out; }
+.checkout-overlay[data-state="closed"] { animation: co-fade 180ms ease-in reverse; }
+.checkout-panel[data-state="open"] { animation: co-up 420ms var(--ease-drawer); }
+.checkout-panel[data-state="closed"] { animation: co-down 220ms ease-in forwards; }
+@media (min-width: 768px) {
+  .checkout-panel[data-state="open"] { animation: co-left 420ms var(--ease-drawer); }
+  .checkout-panel[data-state="closed"] { animation: co-right 220ms ease-in forwards; }
+}
+@keyframes co-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes co-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes co-down { to { transform: translateY(100%); } }
+@keyframes co-left { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes co-right { to { transform: translateX(100%); } }
+
+.done-check { animation: done-pop 520ms var(--ease-out-strong); }
+@keyframes done-pop { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
+
+/* botão fixo "ver preço" no celular */
+.price-dock { transition: transform 320ms var(--ease-out-strong), opacity 200ms ease; }
+.price-dock[data-hidden="true"] { transform: translateY(120%); opacity: 0; pointer-events: none; }
+
+/* iframe do mapa de cliques no painel */
+.heatmap-mode .fade-hidden { opacity: 1 !important; transform: none !important; }
+.heatmap-mode .hero-section { min-height: 0 !important; }
+.heatmap-mode .factory-video { max-height: 640px !important; }
+.heatmap-mode .price-dock, .heatmap-mode body::after { display: none !important; }
+.heatmap-mode *, .heatmap-mode *::before, .heatmap-mode *::after { animation-play-state: paused !important; transition: none !important; }

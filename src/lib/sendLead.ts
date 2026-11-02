@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { getTrackingIds, track } from "./tracking";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -109,14 +110,13 @@ export async function sendLeadToDataCrazy(
     referrer: typeof document !== "undefined" ? document.referrer : "",
     landing_url: typeof window !== "undefined" ? window.location.href : "",
   };
-  console.log("Lead enviado:", payload.origem_captura, payload.utm_campaign);
   try {
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    console.log("DataCrazy response:", res.status);
+    if (!res.ok) console.warn("[crm] status", res.status);
   } catch (err) {
     console.error("DataCrazy webhook error:", err);
   }
@@ -224,6 +224,8 @@ export async function upsertLead(
     user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     page_url: typeof window !== "undefined" ? window.location.href : "",
     ...getUtmParams(),
+    cep: lead.cep || "",
+    ...getTrackingIds(),
   };
 
   try {
@@ -234,7 +236,7 @@ export async function upsertLead(
       console.error("[saveLead] ERRO:", error.code, error.message, error.details, error.hint);
       return existingId;
     }
-    console.log("[saveLead] OK, id:", id);
+    track("lead_saved", { origem, tem_whatsapp: !!lead.whatsapp });
     return id;
   } catch (err) {
     console.error("[saveLead] ERRO inesperado:", err);

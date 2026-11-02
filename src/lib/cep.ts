@@ -57,3 +57,23 @@ export async function lookupCep(cep: string): Promise<CepLookupResult> {
     clearTimeout(timer);
   }
 }
+
+/** Endereço completo para o checkout (ViaCEP). null = não encontrado/indisponível. */
+export async function lookupAddress(
+  cep: string,
+): Promise<{ rua: string; bairro: string; cidade: string; uf: string } | null> {
+  const digits = (cep || "").replace(/\D/g, "");
+  if (digits.length !== 8) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { signal: controller.signal });
+    const j = (await res.json()) as { erro?: unknown; logradouro?: string; bairro?: string; localidade?: string; uf?: string };
+    if (j.erro) return null;
+    return { rua: j.logradouro || "", bairro: j.bairro || "", cidade: j.localidade || "", uf: j.uf || "" };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
