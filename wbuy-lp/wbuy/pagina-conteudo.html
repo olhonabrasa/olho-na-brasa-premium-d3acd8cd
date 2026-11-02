@@ -1,22 +1,34 @@
 <!--
-  LP "Monte seu kit" — cole TUDO isto no editor da página de conteúdo da Wbuy,
-  no modo código-fonte (botão "Código-fonte" / "<>" do editor), tipo Texto/HTML.
-  O montador, o 3D e o carrinho vêm do script abaixo; nada mais precisa mudar no tema.
+  LP "Monte seu kit" — página de conteúdo da Wbuy (Páginas > Conteúdo, tipo Texto/HTML).
+  Já existe no painel: id 29577, URL /m/monte-seu-kit/. Este arquivo é a referência 1:1
+  do que está salvo lá.
+
+  O editor da Wbuy (TinyMCE) filtra o HTML ao salvar, por isso o conteúdo vai em DUAS partes:
+    1. <link> é removido inteiro, então a fonte entra por @import dentro do <style>;
+    2. <script> perde o atributo src, então a tag do script vai no campo "Scripts adicionais";
+    3. aspas simples dentro de <style> viram &apos; na página publicada (Issue #4),
+       então url() SEMPRE sem aspas.
+
+  ========== PARTE 1: colar no editor de conteúdo, modo código-fonte ==========
 -->
 <style>
-  /* esconde o título e o "Página inicial > ..." da página de conteúdo e libera a largura toda */
-  #informacoes .breadcrumbs,
-  #informacoes .central > .titulo { display: none !important; }
-  #informacoes .central { max-width: none !important; width: 100% !important; padding: 0 !important; }
-  #informacoes article.texto { margin: 0 !important; padding: 0 !important; }
-  /* o cabeçalho da loja é fixo: o 3D gruda logo abaixo dele */
-  #onb-kit-lp { --onb-topo: var(--topo_altura, 0px); min-height: 80vh; }
-  @media (max-width: 800px) { #onb-kit-lp { --onb-topo: var(--topo_altura_mobile, 0px); } }
+@import url(https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap);
+/* esconde o título e o "Página inicial > ..." da página de conteúdo e libera a largura toda */
+#informacoes .breadcrumbs,
+#informacoes .central > .titulo { display: none !important; }
+#informacoes .central { max-width: none !important; width: 100% !important; padding: 0 !important; }
+#informacoes article.texto { margin: 0 !important; padding: 0 !important; }
+/* o cabeçalho da loja é fixo: o 3D gruda logo abaixo dele */
+#onb-kit-lp { --onb-topo: var(--topo_altura, 0px); min-height: 80vh; }
+@media (max-width: 800px) { #onb-kit-lp { --onb-topo: var(--topo_altura_mobile, 0px); } }
 </style>
-<link rel="preconnect" href="https://premium.olhonabrasa.com.br" crossorigin>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <div id="onb-kit-lp">
-  <p style="padding:80px 20px;text-align:center;font:16px system-ui;color:#6b665f">Carregando o montador do kit…</p>
+<p style="padding:80px 20px;text-align:center;font:16px system-ui;color:#6b665f">Carregando o montador do kit...</p>
 </div>
-<script type="module" src="https://premium.olhonabrasa.com.br/wbuy-lp/kit-builder.js"></script>
+<!--
+  ========== PARTE 2: colar no campo "Scripts adicionais" (abaixo dos banners) ==========
+  O rótulo diz "(somente JS e/ou CSS)", mas o campo injeta o conteúdo CRU no HTML.
+  Colar COM as tags (JS puro vira texto visível na página e não executa):
+
+  <script type="module" src="https://premium.olhonabrasa.com.br/wbuy-lp/kit-builder.js"></script>
+-->
