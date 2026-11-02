@@ -30,12 +30,24 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "celular", use: { ...devices["iPhone 13"], channel: "chrome", defaultBrowserType: "chromium" } },
-    { name: "tablet", use: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true } },
+    {
+      name: "celular",
+      use: { ...devices["iPhone 13"], channel: "chrome", defaultBrowserType: "chromium" },
+    },
+    {
+      name: "tablet",
+      use: {
+        viewport: { width: 768, height: 1024 },
+        deviceScaleFactor: 1,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
     { name: "desktop", use: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 } },
   ],
   webServer: {
-    command: "node node_modules/vite/bin/vite.js --config wbuy-lp/vite.config.ts --port 5181 --strictPort",
+    command:
+      "node node_modules/vite/bin/vite.js --config wbuy-lp/vite.config.ts --port 5181 --strictPort",
     cwd: "..",
     url: "http://localhost:5181",
     reuseExistingServer: true,

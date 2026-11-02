@@ -19,7 +19,7 @@ import {
   espetoPeca,
   grelhaUruguaia,
 } from "@/components/checkout/kit3d/geometry";
-import logoSvg from "../../public/3d/logo-olho-na-brasa.svg?raw";
+import logoSvg from "../../../../public/3d/logo-olho-na-brasa.svg?raw";
 import {
   bandejaCoracao,
   baseCooktop,

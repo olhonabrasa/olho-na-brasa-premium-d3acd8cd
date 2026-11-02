@@ -1,7 +1,7 @@
 // HTML de cada dobra da LP, na ordem da página. Nenhum link leva para fora da
 // LP: o único caminho de saída é o carrinho (comprar) ou o WhatsApp (dúvida).
 import { A_MAX, A_MIN, B_MAX, B_MIN } from "./builder";
-import type { Ambiente, Instalacao } from "./cena3d";
+import type { Ambiente, Instalacao } from "./configurador/palco/cena3d";
 import {
   ACC_INFO,
   AMBIENTES,

@@ -12,5 +12,3 @@ export const foto = (nome: string, alt: string, w: number, h: number, cls = "", 
   `<img src="${IMG}${nome}.webp" alt="${esc(alt)}" width="${w}" height="${h}"${cls ? ` class="${cls}"` : ""} ${
     eager ? 'fetchpriority="high"' : 'loading="lazy"'
   } decoding="async">`;
-
-export const reduzMovimento = () => matchMedia("(prefers-reduced-motion: reduce)").matches;

@@ -1,5 +1,6 @@
 // Comportamento das dobras (tudo fora do montador): vídeo do topo,
-// carrossel de destaques, antes e depois, vídeos, WhatsApp e entradas suaves.
+// carrossel de destaques, antes e depois, vídeos, WhatsApp e barras fixas.
+// As entradas suaves e o prefers-reduced-motion estão em motion/.
 import { WHATS } from "./conteudo";
 import { IMG } from "./util";
 
@@ -291,23 +292,7 @@ export function setasCarrossel(root: HTMLElement) {
   });
 }
 
-// ---------- entradas suaves e barras fixas ----------
-
-export function entradasSuaves(root: HTMLElement, reduzido: boolean) {
-  if (reduzido) return;
-  const io = new IntersectionObserver(
-    (es) =>
-      es.forEach((e) => {
-        if (e.isIntersecting) {
-          e.target.classList.add("visto");
-          io.unobserve(e.target);
-        }
-      }),
-    { rootMargin: "0px 0px -8% 0px" },
-  );
-  root.querySelectorAll(".onb-sobe").forEach((el) => io.observe(el));
-  root.classList.add("onb-anima");
-}
+// ---------- barras fixas ----------
 
 /**
  * Barra "Kit Premium" (desktop) e dock de preço (celular): aparecem depois do topo, somem no resumo.

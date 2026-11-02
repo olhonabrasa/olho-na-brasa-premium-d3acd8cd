@@ -4,11 +4,16 @@ Leia também o `AGENTS.md` (repositório ligado ao Lovable: nunca reescrever his
 
 ## Onde está cada coisa
 
-- Código-fonte da LP: `wbuy-lp/src/` (TypeScript puro + three.js, sem framework). Vive na branch
-  `feat/wbuy-lp`; o `main` só recebe o build.
+- Código-fonte da LP: `wbuy-lp/src/` (TypeScript puro + three.js, sem framework), no `main`,
+  junto do build. `main.ts` só liga as partes; as dobras estão em `dobras.ts` e `interacoes.ts`;
+  o montador em `configurador/` (um arquivo por passo, o 3D e as cotas em `configurador/palco/`);
+  movimento em `motion/`; cores, fontes, medidas e curvas só em `styles/tokens.css`.
 - Build: `npm run build:wbuy` gera `public/wbuy-lp/` (kit-builder.js + chunk do palco + `img/`).
-  Deploy = copiar `public/wbuy-lp/` para o `main` do repositório, que o Cloudflare Pages serve em
+  O build vai commitado; o merge no `main` publica pelo Cloudflare Pages em
   `https://premium.olhonabrasa.com.br/wbuy-lp/`.
+- Regressão visual: `npx playwright test --config wbuy-lp/playwright.config.ts` (Chrome da
+  máquina, 390×844 / 768×1024 / 1440×900). Capturas em `wbuy-lp/tests/capturas/`; só se
+  atualizam (`--update-snapshots`) quando a mudança visual é intencional.
 - Página de teste: `npm run dev:wbuy` (http://localhost:5181, modo simulado: preços de exemplo,
   carrinho não muda). Mídia nova só aparece depois de build + reiniciar o dev server.
 - O que vai colado na Wbuy: `wbuy-lp/wbuy/pagina-conteudo.html` (página de conteúdo ID 29577,
@@ -23,12 +28,15 @@ Leia também o `AGENTS.md` (repositório ligado ao Lovable: nunca reescrever his
 - Cache de 5 min no domínio final; 1 min em `olhonabrasa.lojawbuy.com.br`, que hoje cai em "modo
   simulado" porque não está na lista de hosts do builder.
 - O tema fixa todo `<header>` e tem um chat flutuante (`#lb-widget-container`, z-index 9999).
+- O render escapa aspas simples dentro de `<style>` para `&apos;`: nunca usar aspas simples ali
+  (`url()` sempre sem aspas).
 
 ## Fluxo de trabalho
 
-- Uma Issue por tarefa, um PR por entrega. O PR diz: Issue, o que mudou, como validou, riscos,
-  limitações e próximos passos.
-- PRs têm `feat/wbuy-lp` como base. Depois do merge, o build vai para o `main`.
+- Uma Issue por tarefa, um PR por entrega, base `main`. O PR diz: Issue, o que mudou, como
+  validou, riscos, limitações e próximos passos, e fecha a Issue com `Closes #N` ("Fecha #N" não
+  aciona o fechamento automático).
+- O merge é humano (o app bloqueia `gh pr merge`).
 - Toda publicação na WBuy espera 5 minutos de cache antes da conferência.
 
 ## Configurador 3D (aba "Monte o seu")

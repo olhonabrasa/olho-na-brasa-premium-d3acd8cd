@@ -4,7 +4,7 @@
 // Mesmas unidades e eixos do buildKit: metros, y para cima, o suporte no plano
 // z = -0,1 com as grelhas saindo para +z; base do suporte em y = 0,16.
 import * as THREE from "three";
-import { medidasGeo, type MedidasGeo } from "./medidas";
+import { medidasGeo, type MedidasGeo } from "./medidasGeo";
 
 export const BASE_Y = 0.16;
 export const FRAME_Z = -0.1;

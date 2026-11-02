@@ -35,7 +35,12 @@ async function conferirMontador(page: Page, nome: string) {
   const caixa = (await montador.boundingBox())!;
   await expect(page).toHaveScreenshot(`${nome}.png`, {
     fullPage: true,
-    clip: { x: 0, y: Math.floor(caixa.y), width: Math.ceil(caixa.width), height: Math.ceil(caixa.height) },
+    clip: {
+      x: 0,
+      y: Math.floor(caixa.y),
+      width: Math.ceil(caixa.width),
+      height: Math.ceil(caixa.height),
+    },
     mask: mascaras(page),
   });
   expect(await montador.innerText()).toMatchSnapshot(`${nome}.txt`);
@@ -43,7 +48,10 @@ async function conferirMontador(page: Page, nome: string) {
 
 test("página inteira", async ({ page }) => {
   await abrir(page);
-  await expect(page).toHaveScreenshot("pagina-inteira.png", { fullPage: true, mask: mascaras(page) });
+  await expect(page).toHaveScreenshot("pagina-inteira.png", {
+    fullPage: true,
+    mask: mascaras(page),
+  });
 });
 
 test("montador: estado inicial (70×60)", async ({ page }) => {
