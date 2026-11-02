@@ -26,6 +26,35 @@
       .container {
         width: 100%;
       }
+      /* chat flutuante da loja: mesmos ids e medidas do tema, para o teste ver o que cobre o Comprar */
+      #lb-widget-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+      }
+      #lb-toggle-btn {
+        width: 60px;
+        height: 60px;
+        background: #25d366;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+        cursor: pointer;
+      }
+      #lb-chat-window {
+        display: none;
+        position: absolute;
+        right: 0;
+        bottom: 80px;
+        width: 360px;
+        height: 550px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgb(0 0 0 / 0.2);
+      }
+      #lb-chat-window.open {
+        display: flex;
+      }
     </style>
   </head>
   <body>
@@ -35,6 +64,16 @@
       <div id="onb-kit-lp"></div>
     </div>
     <div class="fake-rodape">Rodapé da loja (simulado)</div>
+    <div id="lb-widget-container">
+      <div id="lb-chat-window"></div>
+      <div id="lb-toggle-btn" title="Chat da loja (simulado)"></div>
+    </div>
+    <script>
+      // o tema expõe lbToggleChat(); a LP usa em "Falar no WhatsApp"
+      window.lbToggleChat = () =>
+        document.getElementById("lb-chat-window").classList.toggle("open");
+      document.getElementById("lb-toggle-btn").addEventListener("click", window.lbToggleChat);
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
