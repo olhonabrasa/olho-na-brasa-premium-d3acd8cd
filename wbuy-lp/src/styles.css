@@ -812,7 +812,7 @@ html.onb-dock-aberto #lb-widget-container {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--brasa);
+  color: var(--brasa-clara); /* --brasa dá 4,2:1 sobre o fundo; texto pequeno pede 4,5 */
   margin-bottom: 10px;
 }
 #onb-kit-lp #onb-montador-t {
@@ -1023,8 +1023,8 @@ html.onb-dock-aberto #lb-widget-container {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--brasa);
-  color: var(--osso);
+  background: var(--brasa-clara);
+  color: var(--carvao);
   font-size: 12px;
   font-weight: 700;
 }
@@ -1269,8 +1269,8 @@ html.onb-dock-aberto #lb-widget-container {
   height: 20px;
   margin-right: 6px;
   border-radius: 50%;
-  background: var(--brasa);
-  color: var(--osso);
+  background: var(--brasa-clara);
+  color: var(--carvao);
   font-size: 12px;
   font-weight: 700;
   vertical-align: -4px;
@@ -1717,8 +1717,9 @@ html.onb-dock-aberto #lb-widget-container {
   transform: scale(0.97);
 }
 #onb-kit-lp .onb-acc-btn[aria-pressed="true"] {
-  background: var(--brasa);
-  border-color: var(--brasa);
+  background: var(--brasa-clara);
+  border-color: var(--brasa-clara);
+  color: var(--carvao); /* 13px: carvão sobre brasa clara dá 7:1 */
 }
 #onb-kit-lp .onb-acc-acao {
   display: inline-flex;
@@ -1838,7 +1839,7 @@ html.onb-dock-aberto #lb-widget-container {
   border-radius: 14px;
   background: var(--brasa);
   color: var(--osso);
-  font-size: 17px;
+  font-size: 19px; /* texto grande (≥ 18,66px em negrito): osso sobre --brasa passa com folga */
   font-weight: 700;
   transition:
     background-color var(--t-rapido) var(--ease),
@@ -2669,7 +2670,7 @@ html.onb-dock-aberto #lb-widget-container {
     padding: 0 22px;
     height: 48px;
     margin: 0;
-    font-size: 16px;
+    font-size: 19px;
   }
   /* o resumo abre acima da barra ao tocar no preço: só transform e opacity */
   #onb-kit-lp .onb-dock-resumo {

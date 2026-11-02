@@ -11,9 +11,17 @@ export type Preco = {
   prazo: string | null;
 };
 
-// loja final e a prévia da Wbuy (olhonabrasa.lojawbuy.com.br): mesma plataforma, mesmo carrinho
-const NA_LOJA = /(^|\.)olhonabrasa\.(com\.br|lojawbuy\.com\.br)$/.test(location.hostname);
-export const MODO_SIMULADO = !NA_LOJA;
+// Onde o montador fala com a loja de verdade. A prévia da Wbuy (olhonabrasa.lojawbuy.com.br) é a
+// mesma plataforma e o mesmo carrinho; entra atrás da flag VITE_PREVIA_WBUY (ligada por padrão;
+// "0" no build desliga). ?simulado=1 força o modo simulado em qualquer host, para testar sem
+// mexer no carrinho.
+const HOSTS_LOJA = ["olhonabrasa.com.br"];
+const HOSTS_PREVIA = ["olhonabrasa.lojawbuy.com.br"];
+const PREVIA_ATIVA = (import.meta.env.VITE_PREVIA_WBUY ?? "1") !== "0";
+const hostDe = (lista: string[]) =>
+  lista.some((h) => location.hostname === h || location.hostname.endsWith("." + h));
+const NA_LOJA = hostDe(HOSTS_LOJA) || (PREVIA_ATIVA && hostDe(HOSTS_PREVIA));
+export const MODO_SIMULADO = !NA_LOJA || new URLSearchParams(location.search).has("simulado");
 
 type JQ = {
   post: (
