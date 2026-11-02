@@ -53,6 +53,10 @@ export type Acoes = {
   cotas: (on: boolean) => void;
   /** valor da régua em arraste (null quando solta): a cota acompanha em tempo real */
   previaMedida: (nome: "a" | "b", valor: number | null) => void;
+  /** ao entrar no passo do kit: acende a linha mais perto do meio da tela */
+  acenderDestaque: () => void;
+  /** ao sair do passo do kit: nenhuma linha acesa, 3D inteiro a 1 */
+  apagarDestaque: () => void;
 };
 
 export type Ctx = {

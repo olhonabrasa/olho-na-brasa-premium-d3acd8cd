@@ -58,6 +58,43 @@ export function montarPecas(ctx: Ctx) {
     return `${idx === 1 ? "Simples" : "Duplo"} ${c.espetos.comprimentoCm} cm`;
   }
 
+  // ---------- a linha que cruza o meio da tela acende a peça no 3D ----------
+  // mais de uma linha pode cruzar a faixa central: acende a mais perto do meio da tela
+  const centro = new IntersectionObserver(
+    (es) => es.some((e) => e.isIntersecting) && acenderPerto(),
+    { rootMargin: "-45% 0px -45% 0px" },
+  );
+  const linhas = () => [...conteudo.querySelectorAll<HTMLElement>("li[data-peca]")];
+
+  /** Acende a linha mais perto do meio da tela (pelo observer e quando o passo 3 vira o ativo). */
+  function acenderPerto() {
+    const meio = innerHeight / 2;
+    const perto = linhas()
+      .map((li) => {
+        const r = li.getBoundingClientRect();
+        return { li, d: Math.abs(r.top + r.height / 2 - meio) };
+      })
+      .sort((a, b) => a.d - b.d)[0];
+    if (perto) acenderLinha(perto.li);
+  }
+
+  function acenderLinha(li: HTMLElement) {
+    // só enquanto o passo do kit é o ativo (o cartão que cruza o meio da tela)
+    if (!li.closest(".onb-passo")?.classList.contains("ativo")) return;
+    linhas().forEach((x) => {
+      x.classList.toggle("acesa", x === li);
+      x.classList.toggle("esmaecida", x !== li);
+    });
+    // os pés estão soldados no suporte: acendem com ele
+    ctx.stage?.focar(li.dataset.peca === "pes" ? "suporte" : li.dataset.peca!);
+  }
+
+  /** Ao sair do passo do kit, tudo volta a 1. */
+  function apagarLinhas() {
+    linhas().forEach((x) => x.classList.remove("acesa", "esmaecida"));
+    ctx.stage?.focar(null);
+  }
+
   // ---------- as seis linhas ----------
   function renderConteudo() {
     const f = faixaKit(s.a, s.b);
@@ -74,7 +111,15 @@ export function montarPecas(ctx: Ctx) {
           )
           .join("")
       : "";
+    linhas().forEach((li) => centro.observe(li));
   }
 
-  return { escolherNo3D, fecharPop, popAberto: () => !pop.hidden, renderConteudo };
+  return {
+    escolherNo3D,
+    fecharPop,
+    popAberto: () => !pop.hidden,
+    renderConteudo,
+    acenderPerto,
+    apagarLinhas,
+  };
 }

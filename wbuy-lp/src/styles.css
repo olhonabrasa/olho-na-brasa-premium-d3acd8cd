@@ -1395,6 +1395,13 @@ html.onb-dock-aberto #lb-widget-container {
 #onb-kit-lp .onb-kit-linhas li:last-child {
   border-bottom: 0;
 }
+/* a linha que cruza o meio da tela acende a peça no 3D; as outras recuam */
+#onb-kit-lp .onb-kit-linhas li.esmaecida {
+  opacity: 0.35;
+}
+#onb-kit-lp .onb-kit-linhas li.acesa .onb-kit-medida {
+  color: var(--osso);
+}
 #onb-kit-lp .onb-kit-medida {
   color: var(--inox-2);
   font-variant-numeric: tabular-nums;

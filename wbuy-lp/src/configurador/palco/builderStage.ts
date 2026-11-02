@@ -67,6 +67,8 @@ export type BuilderStage = {
   update: (c: Composicao, o?: UpdateOptions) => void;
   /** acende uma peça (nome exato) ou um grupo (lista de prefixos de nome) */
   highlight: (parte: string | string[] | null) => void;
+  /** foco de leitura: só esta peça (prefixo de nome) fica a 1, as outras caem para 0,35; null desfaz */
+  focar: (parte: string | null) => void;
   /** posição na tela (px, relativa ao canvas) de um ponto do kit em metros */
   project: (p: [number, number, number]) => { x: number; y: number; atras: boolean };
   setActive: (on: boolean) => void;
@@ -78,6 +80,11 @@ export type BuilderStage = {
 const ENV_ROTATION_Y = -2.3;
 const ENV_FRENTE = 1.6;
 const ENTRADA_MS = 520;
+/** acessório adicionado: entra de cima com fade, sem quique */
+const ENTRADA_ACC_MS = 320;
+/** foco de leitura (passo 3): opacidade das outras peças e tempo da fusão */
+const ESMAECIDO = 0.35;
+const FOCO_MS = 150;
 
 export function createBuilderStage(
   host: HTMLElement,
@@ -161,6 +168,23 @@ export function createBuilderStage(
     return a;
   };
 
+  // foco de leitura: as peças fora de foco usam uma cópia translúcida do material
+  const esmaecidos = new Map<THREE.Material, THREE.Material>();
+  const esmaecer = (m: THREE.Material) => {
+    let e = esmaecidos.get(m);
+    if (!e) {
+      e = m.clone();
+      e.transparent = true;
+      e.opacity = 1;
+      esmaecidos.set(m, e);
+    }
+    return e;
+  };
+  let foco: string | null = null;
+  /** 0 = tudo a 1; 1 = outras peças a ESMAECIDO. Anda em FOCO_MS. */
+  let focoAtual = 0;
+  const casaFoco = (nome: string) => !!foco && (nome === foco || nome.startsWith(foco));
+
   let kit: THREE.Group | null = null;
   let nomesAntes = new Set<string>();
   let destaque: string[] = [];
@@ -170,7 +194,15 @@ export function createBuilderStage(
   let disposed = false;
   let framedOnce = false;
   let raioAntes = 0;
-  const entradas: { obj: THREE.Object3D; de: THREE.Vector3; ate: THREE.Vector3; t0: number }[] = [];
+  const entradas: {
+    obj: THREE.Object3D;
+    de: THREE.Vector3;
+    ate: THREE.Vector3;
+    t0: number;
+    ms: number;
+    /** materiais translúcidos da peça que entra com fade */
+    fade?: THREE.Material[];
+  }[] = [];
 
   new HDRLoader().load(
     opts.assetBase + (opts.mobile ? "3d/white_home_studio_1k.hdr" : "3d/white_home_studio_2k.hdr"),
@@ -236,17 +268,24 @@ export function createBuilderStage(
   }
 
   function aplicarMateriais(fantasma: string[]) {
+    const comFoco = focoAtual > 0;
     kit?.children.forEach((peca) => {
       const f = fantasma.includes(peca.name);
-      const on = !f && casa(peca.name);
+      const on = !f && (casa(peca.name) || casaFoco(peca.name));
+      const fora = !f && comFoco && !casaFoco(peca.name);
       peca.traverse((o) => {
         if (!(o instanceof THREE.Mesh)) return;
         const base = o.userData.base as THREE.Material;
-        o.material = f ? fantasmaMat : on ? acender(base) : base;
+        o.material = f ? fantasmaMat : on ? acender(base) : fora ? esmaecer(base) : base;
         o.castShadow = !f;
       });
       peca.userData.fantasma = f;
     });
+  }
+  /** Opacidade das peças fora de foco acompanha focoAtual. */
+  function aplicarFoco() {
+    const op = 1 - (1 - ESMAECIDO) * focoAtual;
+    esmaecidos.forEach((m) => (m.opacity = op));
   }
   let fantasmaAtual: string[] = [];
 
@@ -403,13 +442,30 @@ export function createBuilderStage(
       const agora = performance.now();
       for (let i = entradas.length - 1; i >= 0; i--) {
         const e = entradas[i];
-        const t = Math.min((agora - e.t0) / ENTRADA_MS, 1);
+        const t = Math.min((agora - e.t0) / e.ms, 1);
         e.obj.position.lerpVectors(e.de, e.ate, ease(t));
+        e.fade?.forEach((m) => (m.opacity = ease(t)));
         if (t >= 1) {
           entradas.splice(i, 1);
+          if (e.fade) {
+            aplicarMateriais(fantasmaAtual); // volta aos materiais de verdade
+            e.fade.forEach((m) => m.dispose());
+          }
           renderer.shadowMap.needsUpdate = true;
         }
       }
+      dirty = true;
+    }
+    // foco de leitura: as outras peças descem para 0,35 (ou voltam) em FOCO_MS
+    const focoAlvo = foco ? 1 : 0;
+    if (focoAtual !== focoAlvo) {
+      const passo = opts.reducedMotion ? 1 : (dt * 1000) / FOCO_MS;
+      focoAtual =
+        focoAlvo > focoAtual
+          ? Math.min(focoAlvo, focoAtual + passo)
+          : Math.max(0, focoAtual - passo);
+      aplicarFoco();
+      if (focoAtual === 0) aplicarMateriais(fantasmaAtual); // tudo de volta ao material base
       dirty = true;
     }
     if (!moved && !dirty && !controls.autoRotate) return;
@@ -510,20 +566,43 @@ export function createBuilderStage(
       if (o.destaque !== undefined) destaque = o.destaque ? [o.destaque] : [];
       fantasmaAtual = o.fantasma ?? [];
       aplicarMateriais(fantasmaAtual);
-      // peça que não existia antes entra deslizando de frente (ou de cima, o suporte)
+      // peça que não existia antes entra deslizando de frente (ou de cima, o suporte);
+      // acessório entra de cima com fade, em 320 ms, sem quique
       if (!opts.reducedMotion && framedOnce) {
         for (const p of pecas) {
           if (nomesAntes.has(p.name)) continue;
+          const acessorio = p.name.startsWith("acc_");
           const ate = p.position.clone();
           const de = ate
             .clone()
             .add(
-              p.name === "suporte"
-                ? new THREE.Vector3(0, 0.25, 0)
-                : new THREE.Vector3(0, 0.04, 0.3),
+              acessorio
+                ? new THREE.Vector3(0, 0.06, 0)
+                : p.name === "suporte"
+                  ? new THREE.Vector3(0, 0.25, 0)
+                  : new THREE.Vector3(0, 0.04, 0.3),
             );
           p.position.copy(de);
-          entradas.push({ obj: p, de, ate, t0: performance.now() });
+          let fade: THREE.Material[] | undefined;
+          if (acessorio) {
+            fade = [];
+            p.traverse((o) => {
+              if (!(o instanceof THREE.Mesh)) return;
+              const m = (o.material as THREE.Material).clone();
+              m.transparent = true;
+              m.opacity = 0;
+              o.material = m;
+              fade!.push(m);
+            });
+          }
+          entradas.push({
+            obj: p,
+            de,
+            ate,
+            t0: performance.now(),
+            ms: acessorio ? ENTRADA_ACC_MS : ENTRADA_MS,
+            fade,
+          });
         }
       }
       nomesAntes = new Set(pecas.map((p) => p.name));
@@ -533,6 +612,16 @@ export function createBuilderStage(
     },
     highlight(parte) {
       destaque = parte === null ? [] : Array.isArray(parte) ? parte : [parte];
+      aplicarMateriais(fantasmaAtual);
+      dirty = true;
+    },
+    focar(parte) {
+      if (parte === foco) return;
+      foco = parte;
+      if (opts.reducedMotion) {
+        focoAtual = foco ? 1 : 0;
+        aplicarFoco();
+      } else if (foco && focoAtual === 0) focoAtual = 0.001; // já entra com a cópia translúcida
       aplicarMateriais(fantasmaAtual);
       dirty = true;
     },
@@ -583,6 +672,7 @@ export function createBuilderStage(
       );
       ambiente?.traverse((m) => m instanceof THREE.Mesh && m.geometry.dispose());
       fantasmaMat.dispose();
+      esmaecidos.forEach((m) => m.dispose());
       scene.environment?.dispose();
       ground.geometry.dispose();
       (ground.material as THREE.Material).dispose();
