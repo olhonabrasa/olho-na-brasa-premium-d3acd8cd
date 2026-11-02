@@ -7,7 +7,9 @@ Leia também o `AGENTS.md` (repositório ligado ao Lovable: nunca reescrever his
 - Código-fonte da LP: `wbuy-lp/src/` (TypeScript puro + three.js, sem framework), no `main`,
   junto do build. `main.ts` só liga as partes; as dobras estão em `dobras.ts` e `interacoes.ts`;
   o montador em `configurador/` (um arquivo por passo, o 3D e as cotas em `configurador/palco/`);
-  movimento em `motion/`; cores, fontes, medidas e curvas só em `styles/tokens.css`.
+  as duas cenas ("Kit Premium" e "Montar o meu": passos, instalações, churrasqueiras, modo de
+  preço) em `data/cenas.ts`; movimento em `motion/`; cores, fontes, medidas e curvas só em
+  `styles/tokens.css`.
 - Build: `npm run build:wbuy` gera `public/wbuy-lp/` (kit-builder.js + chunk do palco + `img/`).
   O build vai commitado; o merge no `main` publica pelo Cloudflare Pages em
   `https://premium.olhonabrasa.com.br/wbuy-lp/`.

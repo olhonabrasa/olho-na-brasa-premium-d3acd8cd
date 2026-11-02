@@ -1,7 +1,7 @@
 // Resumo: o que vai para o carrinho, o preço (linhas, total, Pix) e o botão Comprar.
-// No desktop é o cartão preso no topo da coluna; no celular, o passo 5 e a barra fixa no pé.
-import { faixaKit, skuKit } from "../builder";
-import { ACESSORIOS, COMBO_GIRATORIO_CESTO } from "../catalog";
+// No desktop é o cartão preso no topo da coluna; no celular, o último passo e a barra fixa no pé.
+import { faixaKit, pecasDaMontagem, skuKit } from "../builder";
+import { ACESSORIOS, COMBO_GIRATORIO_CESTO, COOKTOP_SKU } from "../catalog";
 import { ACC_INFO, type AccId } from "../conteudo";
 import { adicionarAoCarrinho, irParaCarrinho, preco, type ItemCarrinho } from "../wbuy";
 import { brl, esc } from "../util";
@@ -14,17 +14,27 @@ export function montarResumo(ctx: Ctx) {
   const { root, $, s } = ctx;
   const dock = $(".onb-dock");
 
+  const comSuporte = () => (s.modo === "kit" ? !!faixaKit(s.a, s.b) : s.m.suporte.on);
+
   function itensCarrinho(): Item[] {
-    const f = faixaKit(s.a, s.b);
     const nota = `Medida da churrasqueira: ${s.a}x${s.b} cm · ${s.inst} · ${s.amb} (LP Monte seu kit)`;
     const base: Item[] = [];
-    if (f)
-      base.push({
-        sku: skuKit(f.a, f.b)!,
-        qtd: 1,
-        anotacao: nota,
-        nome: `Kit Premium ${f.a}×${f.b}`,
-      });
+    if (s.modo === "kit") {
+      const f = faixaKit(s.a, s.b);
+      if (f)
+        base.push({
+          sku: skuKit(f.a, f.b)!,
+          qtd: 1,
+          anotacao: nota,
+          nome: `Kit Premium ${f.a}×${f.b}`,
+        });
+    } else {
+      pecasDaMontagem(s.m).forEach((i, k) =>
+        base.push({ sku: i.sku, qtd: i.peca.qtd, anotacao: k === 0 ? nota : "", nome: i.rotulo }),
+      );
+    }
+    if (s.inst === "cooktop" && comSuporte())
+      base.push({ sku: COOKTOP_SKU, qtd: 1, nome: "Encaixe cooktop" });
     const combo = s.acc.giratorio && s.acc.cesto;
     if (combo)
       base.push({ sku: COMBO_GIRATORIO_CESTO, qtd: 1, nome: "Giratório + cesto de miúdos" });
@@ -45,11 +55,12 @@ export function montarResumo(ctx: Ctx) {
       .querySelectorAll<HTMLButtonElement>(".onb-comprar")
       .forEach((b) => (b.disabled = itens.length === 0));
     if (!itens.length) {
-      linhasEl().forEach(
-        (el) =>
-          (el.innerHTML = `<li class="onb-resumo-aviso">Medida fora das faixas do kit (50–99 × 40–74 cm). <button type="button" class="onb-link-inline" data-whats>Fale com a fábrica</button>: a gente faz sob medida.</li>`),
-      );
-      return mostrarTotal(null, "Sob consulta", null);
+      const aviso =
+        s.modo === "kit"
+          ? `Medida fora das faixas do kit (50–99 × 40–74 cm). <button type="button" class="onb-link-inline" data-whats>Fale com a fábrica</button>: a gente faz sob medida.`
+          : "Escolha ao menos uma peça.";
+      linhasEl().forEach((el) => (el.innerHTML = `<li class="onb-resumo-aviso">${aviso}</li>`));
+      return mostrarTotal(null, s.modo === "kit" ? "Sob consulta" : "—", null);
     }
     mostrarTotal(null, "Calculando…", null);
     const precos = await Promise.all(itens.map((i) => preco(i.sku)));
@@ -61,7 +72,8 @@ export function montarResumo(ctx: Ctx) {
       const v = precos[i]!.valor * item.qtd;
       total += v;
       pix += (precos[i]!.pix ?? precos[i]!.valor) * item.qtd;
-      return `<li><span>${esc(item.nome)}</span><b>${brl(v)}</b></li>`;
+      const qtd = item.qtd > 1 ? `${item.qtd}× ` : "";
+      return `<li><span>${qtd}${esc(item.nome)}</span><b>${brl(v)}</b></li>`;
     });
     linhasEl().forEach((el) => (el.innerHTML = linhas.join("")));
     const prazo = precos.find((p) => p!.prazo)?.prazo?.toLowerCase() ?? PRAZO_PADRAO;

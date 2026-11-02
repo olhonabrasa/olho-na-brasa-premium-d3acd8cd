@@ -821,6 +821,34 @@ html.onb-dock-aberto #lb-widget-container {
   letter-spacing: -0.03em;
   color: var(--osso);
 }
+/* controle segmentado: Kit Premium · Montar o meu */
+#onb-kit-lp .onb-segmento {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--onb-noite-2);
+  box-shadow: inset 0 0 0 1px var(--fio);
+}
+#onb-kit-lp .onb-segmento button {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--inox-2);
+  transition:
+    background-color var(--t-rapido) var(--ease),
+    color var(--t-rapido) var(--ease),
+    transform var(--t-rapido) var(--ease);
+}
+#onb-kit-lp .onb-segmento button:active {
+  transform: scale(0.97);
+}
+#onb-kit-lp .onb-segmento button[aria-pressed="true"] {
+  background: var(--osso);
+  color: var(--carvao);
+}
 #onb-kit-lp .onb-builder {
   display: grid;
   grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
@@ -1700,6 +1728,20 @@ html.onb-dock-aberto #lb-widget-container {
 #onb-kit-lp .onb-acc-acao svg {
   width: 12px;
   height: 12px;
+}
+/* "Montar o meu": todas as peças, com régua de medida e quantidade */
+#onb-kit-lp .onb-pecas-lista {
+  display: grid;
+  gap: 8px;
+}
+#onb-kit-lp .onb-peca .onb-acc-txt {
+  gap: 4px;
+}
+#onb-kit-lp .onb-peca .onb-med {
+  margin-top: 6px;
+}
+#onb-kit-lp .onb-peca .onb-stepper {
+  align-self: center;
 }
 /* troca Adicionar ↔ Adicionado: opacity + scale 0,9→1 + blur 4→0 */
 #onb-kit-lp .onb-acc-acao.troca {
