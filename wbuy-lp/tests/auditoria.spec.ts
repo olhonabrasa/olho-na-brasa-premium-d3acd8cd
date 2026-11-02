@@ -180,3 +180,31 @@ test("desktop: a barra do produto encosta no topo e o palco e o resumo ficam aba
     expect(m.resumoTop, "resumo atrás da barra").toBeGreaterThanOrEqual(m.barraBottom);
   }
 });
+
+test("topo: o pôster é o primeiro quadro e, sem WebGL, o 3D não aparece nem deixa botão solto", async ({
+  page,
+}) => {
+  await abrir(page);
+  const m = await page.evaluate(() => {
+    const midia = document.querySelector(".onb-hero-midia")!;
+    const poster = midia.querySelector<HTMLImageElement>(".onb-hero-poster")!;
+    const canvas = midia.querySelector<HTMLCanvasElement>(".onb-hero-canvas")!;
+    return {
+      posterCarregado: poster.complete && poster.naturalWidth > 0,
+      posterOpaco: getComputedStyle(poster).opacity,
+      canvasOpaco: getComputedStyle(canvas).opacity,
+      sem3d: midia.classList.contains("sem-3d"),
+      com3d: midia.classList.contains("com-3d"),
+      replayEscondido: midia.querySelector<HTMLElement>(".onb-hero-replay")!.hidden,
+      video: !!midia.querySelector("video"),
+    };
+  });
+  expect(m.posterCarregado, "pôster do topo não carregou").toBe(true);
+  expect(m.posterOpaco).toBe("1");
+  // os testes rodam sem WebGL: o topo fica no pôster, sem canvas visível nem "ver de novo"
+  expect(m.sem3d).toBe(true);
+  expect(m.com3d).toBe(false);
+  expect(m.canvasOpaco).toBe("0");
+  expect(m.replayEscondido).toBe(true);
+  expect(m.video, "ainda há <video> no topo").toBe(false);
+});

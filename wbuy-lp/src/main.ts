@@ -2,15 +2,16 @@
 // da Wbuy (olhonabrasa.com.br/m/<slug>/). Procura <div id="onb-kit-lp"> e
 // desenha tudo ali dentro. O 3D só baixa quando o montador chega perto da tela.
 // Este arquivo só liga as partes: as dobras estão em dobras.ts e interacoes.ts,
-// o montador em configurador/ (um arquivo por passo, o palco em configurador/palco/).
+// o montador em configurador/ (um arquivo por passo, o palco em configurador/palco/), o 3D do topo
+// em hero3d.ts.
 import css from "./styles.css?inline";
 import { cenaDaUrl, estadoInicial, KitConfigurador } from "./configurador";
 import * as D from "./dobras";
+import { heroTresD } from "./hero3d";
 import {
   antesDepois,
   barrasFixas,
   carrosselDestaques,
-  filmeTopo,
   modalDeVideo,
   setasCarrossel,
   videosNaHora,
@@ -44,7 +45,7 @@ function iniciar(root: HTMLElement) {
   root.classList.add("onb-pronto");
 
   // ---------- dobras ----------
-  filmeTopo(root, reduzido);
+  heroTresD(root, reduzido);
   const destaques = carrosselDestaques(root, reduzido);
   antesDepois(root);
   setasCarrossel(root);

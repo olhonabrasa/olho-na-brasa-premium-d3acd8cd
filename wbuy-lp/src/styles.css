@@ -330,7 +330,7 @@ html.onb-lp-ativa #onb-kit-lp {
   font-weight: 600;
 }
 
-/* ---------- 1. topo: título em cima, o vídeo do kit embaixo (nada cobre o produto) ---------- */
+/* ---------- 1. topo: título em cima, o kit em 3D embaixo (nada cobre o produto) ---------- */
 #onb-kit-lp .onb-hero {
   /* largura que deixa título + vídeo 16:9 inteiros na primeira dobra */
   --onb-hero-w: clamp(640px, (100svh - 370px) * 16 / 9, 1200px);
@@ -393,21 +393,34 @@ html.onb-lp-ativa #onb-kit-lp {
   border-radius: 18px;
   background: var(--onb-noite-midia);
 }
-#onb-kit-lp .onb-hero-poster,
-#onb-kit-lp .onb-hero-video {
+#onb-kit-lp .onb-hero-poster {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transition: opacity 0.6s ease;
 }
-/* o vídeo só aparece por cima do pôster quando o primeiro quadro já está na tela */
-#onb-kit-lp .onb-hero-video {
+/* o 3D entra por cima do pôster quando está pronto; até lá o pôster é o primeiro quadro (LCP) */
+#onb-kit-lp .onb-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.6s ease;
 }
-#onb-kit-lp .onb-hero.video-ativo .onb-hero-video {
+#onb-kit-lp .onb-hero-midia.com-3d .onb-hero-canvas {
   opacity: 1;
+}
+#onb-kit-lp .onb-hero-midia.com-3d .onb-hero-poster {
+  opacity: 0;
+}
+#onb-kit-lp .onb-hero-midia[style*="--onb-progresso: 1"] .onb-carregando i,
+#onb-kit-lp .onb-hero-midia.sem-3d .onb-carregando {
+  opacity: 0;
 }
 /* canto inferior direito: chão de mármore, sem produto embaixo */
 #onb-kit-lp .onb-hero-replay {
@@ -439,7 +452,7 @@ html.onb-lp-ativa #onb-kit-lp {
 #onb-kit-lp .onb-hero-replay[hidden] {
   display: none;
 }
-/* celular: vídeo 4:5 de borda a borda, pelo menos 55% da altura da tela, e o botão de compra embaixo dele */
+/* celular: palco 4:5 de borda a borda, pelo menos 55% da altura da tela, e o botão de compra embaixo dele */
 @media (max-width: 767px) {
   #onb-kit-lp .onb-hero {
     grid-template-columns: minmax(0, 1fr);
