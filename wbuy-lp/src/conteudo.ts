@@ -3,7 +3,7 @@
 // das páginas de produto da loja, das falas do Rodrigo nos vídeos e das
 // avaliações reais do Google (LP Premium).
 import type { Grupo } from "./builder";
-import type { Acessorios, Ambiente } from "./cena3d";
+import type { Acessorios, Ambiente } from "./configurador/palco/cena3d";
 
 export type AccId = keyof Acessorios;
 

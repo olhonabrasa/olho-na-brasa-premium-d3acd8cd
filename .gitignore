@@ -31,3 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# saída do Playwright (regressão da LP Wbuy)
+.playwright/
