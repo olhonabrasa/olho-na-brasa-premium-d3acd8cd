@@ -281,21 +281,38 @@ export function pecasDaMontagem(m: Montagem): ItemResumo[] {
 }
 
 /** O que vem no Kit Premium da faixa (para a lista "vem no kit"). */
-export function conteudoKit(c: Composicao, cooktop = false) {
-  const l = [`Suporte suspenso ${c.suporteLarguraCm} cm · 3 níveis`];
-  l.push(
-    `${c.uruguaia.quantidade} grelhas uruguaias ${c.uruguaia.larguraCm}×${c.uruguaia.comprimentoCm} cm`,
-  );
+/** Uma linha do Kit Premium: nome, medida e a parte do 3D que ela acende. */
+export type LinhaKit = { peca: string; nome: string; medida: string };
+
+/** As seis linhas do Kit Premium, na ordem da LP (1 espeto duplo + 1 simples). */
+export function linhasKit(c: Composicao): LinhaKit[] {
+  const l: LinhaKit[] = [
+    { peca: "suporte", nome: "Suporte suspenso", medida: `${c.suporteLarguraCm} cm · 3 níveis` },
+    {
+      peca: "grelha_uruguaia",
+      nome: `${c.uruguaia.quantidade} grelhas uruguaias`,
+      medida: `${c.uruguaia.larguraCm}×${c.uruguaia.comprimentoCm} cm`,
+    },
+    { peca: "espeto_duplo", nome: "Espeto duplo", medida: `${c.espetos.comprimentoCm} cm` },
+    { peca: "espeto_chata", nome: "Espeto simples", medida: `${c.espetos.comprimentoCm} cm` },
+  ];
   if (c.descanso)
-    l.push(
-      `${c.descanso.quantidade} ${c.descanso.quantidade > 1 ? "grelhas" : "grelha"} auxiliar ${c.descanso.larguraCm} cm`,
-    );
-  l.push(`${c.espetos.quantidade} espetos duplos ${c.espetos.comprimentoCm} cm`);
-  l.push(
-    cooktop
-      ? "Encaixe cooktop: apoia na bancada, sem furar a parede"
-      : `Pés de fixação ${c.peCm} cm, buchas e parafusos inclusos`,
-  );
+    l.push({
+      peca: "grelha_descanso",
+      nome:
+        c.descanso.quantidade > 1
+          ? `${c.descanso.quantidade} grelhas auxiliares`
+          : "Grelha auxiliar",
+      medida: `${c.descanso.larguraCm} cm`,
+    });
+  l.push({ peca: "pes", nome: "Pés de fixação", medida: `${c.peCm} cm · buchas e parafusos` });
+  return l;
+}
+
+/** O kit em frases, para o leitor de tela. */
+export function conteudoKit(c: Composicao, cooktop = false) {
+  const l = linhasKit(c).map((x) => `${x.nome} ${x.medida}`);
+  if (cooktop) l[l.length - 1] = "Encaixe cooktop: apoia na bancada, sem furar a parede";
   return l;
 }
 

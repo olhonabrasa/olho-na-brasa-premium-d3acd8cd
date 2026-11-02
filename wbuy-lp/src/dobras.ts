@@ -131,34 +131,32 @@ export function antesDepois() {
 }
 
 export function montador(s: Inicial) {
-  const medida = (
-    nome: "a" | "b",
-    rotulo: string,
-    ajuda: string,
-    min: number,
-    max: number,
-    v: number,
-  ) => `
+  // caixa em cm + régua; a letra é a mesma da cota sobre o 3D
+  const medida = (nome: "a" | "b", rotulo: string, min: number, max: number, v: number) => `
     <div class="onb-campo">
-      <label for="onb-${nome}">${rotulo}</label>
+      <label for="onb-${nome}"><b>${nome.toUpperCase()}</b> ${rotulo}</label>
       <div class="onb-calc">
-        <span class="onb-calc-num"><input id="onb-${nome}" name="${nome}" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" value="${v}" aria-describedby="onb-ajuda-${nome} onb-msg-${nome}"><em>cm</em></span>
+        <span class="onb-calc-num"><input id="onb-${nome}" name="${nome}" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" value="${v}" aria-describedby="onb-msg-${nome}"><em>cm</em></span>
         <input class="onb-calc-range" type="range" name="${nome}-range" min="${min}" max="${max}" step="1" value="${v}" aria-label="${rotulo}" data-par="${nome}">
       </div>
-      <p class="onb-ajuda" id="onb-ajuda-${nome}">${ajuda}</p>
       <p class="onb-msg" id="onb-msg-${nome}" aria-live="polite"></p>
     </div>`;
   const acc = (id: AccId) => `
-    <button type="button" class="onb-acc" data-acc-toggle="${id}" aria-pressed="false">
+    <article class="onb-acc" data-acc="${id}">
       ${foto(ACC_INFO[id].img, ACC_INFO[id].titulo, 500, 500)}
-      <span class="onb-acc-txt"><strong>${ACC_INFO[id].titulo}</strong><small>${ACC_INFO[id].texto}</small></span>
-      <span class="onb-acc-pe"><span class="onb-acc-preco" data-preco-acc="${id}"></span><span class="onb-acc-acao">Adicionar</span></span>
-    </button>`;
+      <div class="onb-acc-txt"><strong>${ACC_INFO[id].titulo}</strong><small>${ACC_INFO[id].texto}</small><span class="onb-acc-preco" data-preco-acc="${id}"></span></div>
+      <button type="button" class="onb-acc-btn" data-acc-toggle="${id}" aria-pressed="false"><span class="onb-acc-acao">Adicionar</span></button>
+    </article>`;
+  const passo = (n: number, id: string, titulo: string, corpo: string, extra = "") => `
+        <section class="onb-passo${extra}" id="onb-passo-${id}" aria-labelledby="onb-passo-${id}-t">
+          <h3 class="onb-passo-t" id="onb-passo-${id}-t"><span>${n}</span> ${titulo}</h3>
+          ${corpo}
+        </section>`;
   return `
   <section class="onb-montador onb-escuro" id="onb-montador" aria-labelledby="onb-montador-t">
     <div class="onb-dentro onb-montador-topo">
-      <p class="onb-eyebrow">Projeto em 3D</p>
-      <h2 id="onb-montador-t">Monte o seu.<br><span>Veja antes de comprar.</span></h2>
+      <p class="onb-eyebrow">Kit Premium</p>
+      <h2 id="onb-montador-t">Na medida da sua churrasqueira.</h2>
     </div>
     <div class="onb-builder">
       <div class="onb-palco">
@@ -179,64 +177,66 @@ export function montador(s: Inicial) {
       </div>
 
       <div class="onb-painel">
-        <div class="onb-passo">
-          <h3 class="onb-passo-t"><span>1</span> Como vai instalar?</h3>
-          <div class="onb-modos" role="group" aria-label="Instalação">
-            <button type="button" data-inst="suspenso" aria-pressed="${s.inst === "suspenso"}"><strong>Suspenso</strong><small>Parafusado no fundo. A boca fica livre.</small></button>
-            <button type="button" data-inst="cooktop" aria-pressed="${s.inst === "cooktop"}"><strong>Cooktop <i class="onb-tag">O mais pedido</i></strong><small>Apoia na bancada. Sem furar nada.</small></button>
+        ${passo(
+          1,
+          "medidas",
+          "Medidas",
+          `<div class="onb-medidas-grade">
+            <div class="onb-campos">
+              ${medida("a", "Largura da boca", A_MIN, A_MAX, s.a)}
+              ${medida("b", "Comprimento interno", B_MIN, B_MAX, s.b)}
+            </div>
+            <figure class="onb-onde-medir">
+              ${foto("como-medir", "Churrasqueira com a largura da boca marcada como A e o comprimento interno como B", 500, 500)}
+              <figcaption>Meça a largura interna da boca, de parede a parede, sem contar a pedra.</figcaption>
+            </figure>
           </div>
-        </div>
-
-        <div class="onb-passo">
-          <h3 class="onb-passo-t"><span>2</span> Como é a sua churrasqueira?</h3>
-          <div class="onb-chips" role="group" aria-label="Tipo de churrasqueira">
-            ${AMBIENTES.map((a) => `<button type="button" data-amb="${a.id}" aria-pressed="${s.amb === a.id}"><strong>${a.nome}</strong><small>${a.sub}</small></button>`).join("")}
+          <p class="onb-nota">Depois da compra, o time de projetistas confirma as medidas finas com você.</p>`,
+        )}
+        ${passo(
+          2,
+          "churrasqueira",
+          "Sua churrasqueira",
+          `<div class="onb-chips onb-chips-compactos" role="group" aria-label="Tipo de churrasqueira">
+            ${AMBIENTES.filter((a) => a.id !== "bancada")
+              .map(
+                (a) =>
+                  `<button type="button" data-amb="${a.id}" aria-pressed="${s.amb === a.id}"><strong>${a.nome}</strong></button>`,
+              )
+              .join("")}
           </div>
-          <p class="onb-ajuda">Só para você ver o kit no lugar. O preço não muda.</p>
-        </div>
-
-        <div class="onb-passo" id="onb-passo-medidas">
-          <h3 class="onb-passo-t"><span>3</span> Medidas da sua churrasqueira</h3>
-          <div class="onb-campos">
-            ${medida("a", "Largura da boca da sua churrasqueira (A)", "De parede a parede, por dentro.", A_MIN, A_MAX, s.a)}
-            ${medida("b", "Comprimento interno da sua churrasqueira (B)", "Da boca até a parede do fundo.", B_MIN, B_MAX, s.b)}
-          </div>
-          <details class="onb-como">
-            <summary>Ver no desenho onde medir</summary>
-            ${foto("como-medir", "Churrasqueira com a largura da boca marcada como A e o comprimento interno como B", 500, 500)}
-          </details>
-          <p class="onb-ajuda">Depois da compra, o time de projetistas confirma as medidas finas com você.</p>
-        </div>
-
-        <div class="onb-passo">
-          <h3 class="onb-passo-t"><span>4</span> Kit completo ou peça por peça?</h3>
-          <div class="onb-modos" role="group" aria-label="Forma de montar">
-            <button type="button" data-modo="kit" aria-pressed="${s.modo === "kit"}"><strong>Kit completo</strong><small>Tudo calculado pela fábrica</small></button>
-            <button type="button" data-modo="pecas" aria-pressed="${s.modo === "pecas"}"><strong>Peça por peça</strong><small>Misture tipos e medidas</small></button>
-          </div>
-          <p class="onb-faixa"></p>
-          <div id="onb-conteudo"></div>
-        </div>
-
-        <div class="onb-passo">
-          <h3 class="onb-passo-t"><span>5</span> Acessórios</h3>
-          <div class="onb-acc-lista">
+          <p class="onb-ajuda">Só para você ver o kit no lugar. O preço não muda.</p>`,
+        )}
+        ${passo(
+          3,
+          "kit",
+          "O que vem no kit",
+          `<p class="onb-faixa"></p>
+          <ul class="onb-kit-linhas" id="onb-conteudo"></ul>`,
+        )}
+        ${passo(
+          4,
+          "acessorios",
+          "Acessórios",
+          `<div class="onb-acc-lista">
             ${acc("giratorio")}${acc("cesto")}${acc("bandeja")}${acc("defumador")}
           </div>
-          <p class="onb-combo-nota" hidden></p>
-        </div>
-
-        <div class="onb-passo onb-resumo">
-          <div class="onb-total" aria-live="polite"></div>
-          <p class="onb-prazo"></p>
-          <button type="button" class="onb-comprar">Comprar agora</button>
+          <p class="onb-combo-nota" hidden></p>`,
+        )}
+        ${passo(
+          5,
+          "resumo",
+          "Resumo",
+          `<ul class="onb-resumo-linhas" data-resumo-linhas></ul>
+          <p class="onb-total" aria-live="polite"><span class="v"></span><span class="d"></span></p>
+          <p class="onb-prazo">Produção: até 10 dias úteis + frete</p>
+          <p class="onb-selo">Inox 304 · 15 anos de garantia</p>
+          <button type="button" class="onb-comprar">Comprar</button>
           <p class="onb-erro" role="alert" hidden></p>
-          <ul class="onb-garantias">
-            <li>Frete calculado com o seu CEP no carrinho</li>
-            <li>Pix, boleto ou cartão em até 10x sem juros</li>
-            <li>15 anos de garantia</li>
-          </ul>
-        </div>
+          <p class="onb-miudas">Frete calculado com o seu CEP no carrinho · Pix, boleto ou cartão</p>
+          <button type="button" class="onb-link-whats" data-whats>Falar no WhatsApp</button>`,
+          " onb-resumo",
+        )}
       </div>
     </div>
   </section>`;
@@ -444,7 +444,13 @@ export function modalVideo() {
   </dialog>
 
   <div class="onb-dock">
-    <div class="onb-total"></div>
-    <button type="button" class="onb-comprar">Comprar</button>
+    <div class="onb-dock-resumo" id="onb-dock-resumo">
+      <ul class="onb-resumo-linhas" data-resumo-linhas></ul>
+      <p class="onb-miudas">Inox 304 · 15 anos de garantia · Frete calculado com o seu CEP no carrinho</p>
+    </div>
+    <div class="onb-dock-barra">
+      <button type="button" class="onb-dock-preco" aria-expanded="false" aria-controls="onb-dock-resumo"><span class="v"></span><span class="d"></span></button>
+      <button type="button" class="onb-comprar">Comprar</button>
+    </div>
   </div>`;
 }
