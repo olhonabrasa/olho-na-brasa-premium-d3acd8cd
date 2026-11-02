@@ -67,9 +67,17 @@ test("montador: deep link ?a=80&b=70", async ({ page }) => {
   await conferirMontador(page, "montador-80x70");
 });
 
-test("montador: modo peças", async ({ page }) => {
-  await abrir(page, "/?modo=pecas");
-  await conferirMontador(page, "montador-pecas");
+test("montador: acessório adicionado", async ({ page }) => {
+  await abrir(page);
+  const btn = page.locator('.onb-acc-btn[data-acc-toggle="cesto"]');
+  await btn.scrollIntoViewIfNeeded();
+  await btn.click();
+  await expect(btn).toHaveAttribute("aria-pressed", "true");
+  await expect(btn).toHaveText(/Adicionado/);
+  // modo simulado: kit R$ 3.551,00 + cesto R$ 300,00
+  await expect(page.locator(".onb-resumo .onb-total .v")).toHaveText("R$ 3.851,00");
+  await expect(page.locator(".onb-resumo .onb-resumo-linhas")).toContainText("Cesto de miúdos");
+  await conferirMontador(page, "montador-acessorio");
 });
 
 test("console sem erros", async ({ page }) => {
@@ -111,22 +119,61 @@ test("sobre o 3D não há botão, tarja, chip nem dica", async ({ page }) => {
   expect(intrusos).toEqual([]);
 });
 
-test("cotas só no passo das medidas e legenda do palco", async ({ page }) => {
+test("cotas só no passo das medidas e legenda do palco", async ({ page }, info) => {
   await abrir(page);
   const cotas = page.locator(".onb-cotas");
   const legenda = page.locator(".onb-palco-legenda");
-  await rolarAte(page, ".onb-painel .onb-passo:first-child");
-  await expect(legenda).toHaveText(/^70 × 60 cm · .+ · passo 1 de 5$/);
-  await expect(cotas).not.toHaveClass(/\bon\b/);
   await rolarAte(page, "#onb-passo-medidas");
-  await expect(legenda).toHaveText(/· passo 3 de 5$/);
+  await expect(legenda).toHaveText(/^70 × 60 cm · Fechada · passo 1 de 5$/);
   await expect(cotas).toHaveClass(/\bon\b/);
-  await rolarAte(page, ".onb-resumo");
-  await expect(legenda).toHaveText(/· resumo$/);
+  await rolarAte(page, "#onb-passo-kit");
+  await expect(legenda).toHaveText(/· passo 3 de 5$/);
+  await expect(cotas).not.toHaveClass(/\bon\b/);
+  // no desktop o resumo fica preso no topo da coluna e nunca cruza o meio da tela
+  if (info.project.name === "desktop") {
+    await rolarAte(page, "#onb-passo-acessorios");
+    await expect(legenda).toHaveText(/· passo 4 de 5$/);
+  } else {
+    await rolarAte(page, ".onb-resumo");
+    await expect(legenda).toHaveText(/· passo 5 de 5$/);
+  }
   await expect(cotas).not.toHaveClass(/\bon\b/);
 });
 
-/** Posição do palco com o passo 3 no meio da tela e depois com o resumo (medido num só evaluate). */
+test("o que vem no kit: seis linhas, 1 espeto duplo + 1 simples", async ({ page }) => {
+  await abrir(page);
+  const linhas = page.locator("#onb-conteudo li");
+  await expect(linhas).toHaveCount(6);
+  await expect(linhas.nth(0)).toContainText("Suporte suspenso");
+  await expect(linhas.nth(2)).toContainText("Espeto duplo");
+  await expect(linhas.nth(3)).toContainText("Espeto simples");
+  await expect(page.locator('[data-amb="bancada"], [data-inst]')).toHaveCount(0);
+});
+
+test.describe("barra de preço do celular", () => {
+  test.skip(({ isMobile }) => !isMobile, "só existe abaixo de 1024px");
+  test("toque no preço abre o resumo; Comprar nunca coberto", async ({ page }) => {
+    await abrir(page);
+    await rolarAte(page, "#onb-passo-kit");
+    const dock = page.locator(".onb-dock");
+    await expect(dock).toHaveClass(/\bon\b/);
+    await expect(page.locator(".onb-dock-preco .v")).toHaveText("R$ 3.551,00");
+    await page.locator(".onb-dock-preco").click();
+    await expect(dock).toHaveClass(/\baberto\b/);
+    await expect(page.locator(".onb-dock-resumo")).toBeVisible();
+    await expect(page.locator(".onb-dock-resumo")).toContainText("Kit Premium 70×60");
+    const livre = await page.evaluate(() => {
+      const b = document.querySelector(".onb-dock .onb-comprar")!.getBoundingClientRect();
+      return (
+        document.elementFromPoint(b.right - 8, b.top + b.height / 2)?.closest(".onb-comprar") !==
+        null
+      );
+    });
+    expect(livre).toBe(true);
+  });
+});
+
+/** Posição do palco com o passo 1 no meio da tela e depois com o passo 4 (medido num só evaluate). */
 const palcoAoRolar = (page: Page) =>
   page.evaluate(() => {
     const palco = document.querySelector(".onb-palco")!;
@@ -136,7 +183,7 @@ const palcoAoRolar = (page: Page) =>
     };
     rola("#onb-passo-medidas");
     const y1 = palco.getBoundingClientRect().y;
-    rola(".onb-resumo");
+    rola("#onb-passo-acessorios");
     const y2 = palco.getBoundingClientRect().y;
     return { position: getComputedStyle(palco).position, y1, y2 };
   });

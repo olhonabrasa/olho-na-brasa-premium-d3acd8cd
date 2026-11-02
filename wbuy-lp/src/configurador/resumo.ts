@@ -1,48 +1,41 @@
-// Resumo: o que vai para o carrinho, o preço (total, Pix, por linha) e o botão Comprar.
-import { faixaKit, pecasDaMontagem, skuKit } from "../builder";
-import { ACESSORIOS, COMBO_GIRATORIO_CESTO, COOKTOP_SKU } from "../catalog";
-import type { AccId } from "../conteudo";
+// Resumo: o que vai para o carrinho, o preço (linhas, total, Pix) e o botão Comprar.
+// No desktop é o cartão preso no topo da coluna; no celular, o passo 5 e a barra fixa no pé.
+import { faixaKit, skuKit } from "../builder";
+import { ACESSORIOS, COMBO_GIRATORIO_CESTO } from "../catalog";
+import { ACC_INFO, type AccId } from "../conteudo";
 import { adicionarAoCarrinho, irParaCarrinho, preco, type ItemCarrinho } from "../wbuy";
 import { brl, esc } from "../util";
 import type { Ctx } from "./estado";
 
-type Item = ItemCarrinho & { chave: string | null };
+type Item = ItemCarrinho & { nome: string };
+const PRAZO_PADRAO = "até 10 dias úteis";
 
 export function montarResumo(ctx: Ctx) {
   const { root, $, s } = ctx;
-
-  const comSuporte = () => (s.modo === "kit" ? !!faixaKit(s.a, s.b) : s.m.suporte.on);
+  const dock = $(".onb-dock");
 
   function itensCarrinho(): Item[] {
     const f = faixaKit(s.a, s.b);
     const nota = `Medida da churrasqueira: ${s.a}x${s.b} cm · ${s.inst} · ${s.amb} (LP Monte seu kit)`;
     const base: Item[] = [];
-    if (s.modo === "kit") {
-      if (f) base.push({ sku: skuKit(f.a, f.b)!, qtd: 1, anotacao: nota, chave: null });
-    } else {
-      // cada linha leva a sua chave para o preço aparecer ao lado dela no cartão
-      const pos: Record<string, number> = { grelhas: 0, espetos: 0 };
-      pecasDaMontagem(s.m).forEach((i, k) => {
-        let chave: string = i.grupo;
-        if (i.grupo === "grelhas" || i.grupo === "espetos") {
-          const lista: { qtd: number }[] = i.grupo === "grelhas" ? s.m.grelhas : s.m.espetos;
-          let p = pos[i.grupo];
-          while (p < lista.length && lista[p].qtd === 0) p++;
-          pos[i.grupo] = p + 1;
-          chave = `${i.grupo}.${p}`;
-        }
-        base.push({ sku: i.sku, qtd: i.peca.qtd, anotacao: k === 0 ? nota : "", chave });
+    if (f)
+      base.push({
+        sku: skuKit(f.a, f.b)!,
+        qtd: 1,
+        anotacao: nota,
+        nome: `Kit Premium ${f.a}×${f.b}`,
       });
-    }
-    if (s.inst === "cooktop" && comSuporte()) base.push({ sku: COOKTOP_SKU, qtd: 1, chave: null });
     const combo = s.acc.giratorio && s.acc.cesto;
-    if (combo) base.push({ sku: COMBO_GIRATORIO_CESTO, qtd: 1, chave: null });
+    if (combo)
+      base.push({ sku: COMBO_GIRATORIO_CESTO, qtd: 1, nome: "Giratório + cesto de miúdos" });
     (Object.keys(s.acc) as AccId[]).forEach((id) => {
       if (!s.acc[id] || (combo && (id === "giratorio" || id === "cesto"))) return;
-      base.push({ sku: ACESSORIOS[id].sku, qtd: 1, chave: null });
+      base.push({ sku: ACESSORIOS[id].sku, qtd: 1, nome: ACC_INFO[id].titulo });
     });
     return base;
   }
+
+  const linhasEl = () => root.querySelectorAll("[data-resumo-linhas]");
 
   let geracao = 0;
   async function atualizarPreco() {
@@ -51,48 +44,58 @@ export function montarResumo(ctx: Ctx) {
     root
       .querySelectorAll<HTMLButtonElement>(".onb-comprar")
       .forEach((b) => (b.disabled = itens.length === 0));
-    if (!itens.length) return mostrarTotal(null, "Escolha ao menos uma peça");
-    mostrarTotal(null, "Calculando…");
+    if (!itens.length) {
+      linhasEl().forEach(
+        (el) =>
+          (el.innerHTML = `<li class="onb-resumo-aviso">Medida fora das faixas do kit (50–99 × 40–74 cm). <button type="button" class="onb-link-inline" data-whats>Fale com a fábrica</button>: a gente faz sob medida.</li>`),
+      );
+      return mostrarTotal(null, "Sob consulta", null);
+    }
+    mostrarTotal(null, "Calculando…", null);
     const precos = await Promise.all(itens.map((i) => preco(i.sku)));
     if (g !== geracao) return;
-    if (precos.some((p) => !p)) return mostrarTotal(null, "Preço indisponível agora");
+    if (precos.some((p) => !p)) return mostrarTotal(null, "Preço indisponível agora", null);
     let total = 0;
     let pix = 0;
-    const porGrupo: Record<string, number> = {};
-    precos.forEach((p, i) => {
-      const v = p!.valor * itens[i].qtd;
+    const linhas = itens.map((item, i) => {
+      const v = precos[i]!.valor * item.qtd;
       total += v;
-      pix += (p!.pix ?? p!.valor) * itens[i].qtd;
-      const chave = itens[i].chave;
-      if (!chave) return;
-      const grupo = chave.split(".")[0];
-      porGrupo[grupo] = (porGrupo[grupo] ?? 0) + v;
-      const el = root.querySelector(`[data-preco-linha="${chave}"]`);
-      if (el) el.textContent = brl(v);
+      pix += (precos[i]!.pix ?? precos[i]!.valor) * item.qtd;
+      return `<li><span>${esc(item.nome)}</span><b>${brl(v)}</b></li>`;
     });
-    Object.entries(porGrupo).forEach(([gr, v]) => {
-      const el = root.querySelector(`[data-preco-grupo="${gr}"]`);
-      if (el) el.textContent = brl(v);
-    });
-    mostrarTotal({ valor: total, pix: pix < total ? pix : null }, null);
-    const prazo = precos.find((p) => p!.prazo)?.prazo;
-    if (prazo) $(".onb-prazo").textContent = `Produção: ${prazo.toLowerCase()} + frete`;
+    linhasEl().forEach((el) => (el.innerHTML = linhas.join("")));
+    const prazo = precos.find((p) => p!.prazo)?.prazo?.toLowerCase() ?? PRAZO_PADRAO;
+    mostrarTotal({ valor: total, pix: pix < total ? pix : null }, null, prazo);
   }
 
-  function mostrarTotal(p: { valor: number; pix: number | null } | null, msg: string | null) {
-    root.querySelectorAll(".onb-total").forEach((el) => {
-      el.innerHTML = p
-        ? `<span class="v">${brl(p.valor)}</span><span class="d">${p.pix ? `${brl(p.pix)} no Pix · ` : ""}até 10x sem juros</span>`
-        : `<span class="v onb-pulso">${msg}</span>`;
-    });
+  function mostrarTotal(
+    p: { valor: number; pix: number | null } | null,
+    msg: string | null,
+    prazo: string | null,
+  ) {
+    const totalV = $(".onb-resumo .onb-total .v");
+    const totalD = $(".onb-resumo .onb-total .d");
+    totalV.textContent = p ? brl(p.valor) : msg;
+    totalV.classList.toggle("onb-pulso", !p && msg === "Calculando…");
+    totalD.textContent = p ? `${p.pix ? `${brl(p.pix)} no Pix · ` : ""}até 10x sem juros` : "";
+    $(".onb-prazo").textContent = `Produção: ${prazo ?? PRAZO_PADRAO} + frete`;
+    $(".onb-dock-preco .v").textContent = p ? brl(p.valor) : msg;
+    $(".onb-dock-preco .d").textContent = p ? `até 10x · ${prazo ?? PRAZO_PADRAO}` : "";
     root
       .querySelectorAll(".onb-barra-preco")
       .forEach((el) => (el.textContent = p ? brl(p.valor) : ""));
   }
 
+  /** Toque no preço da barra do celular abre e fecha o resumo. */
+  function alternarDock(aberto = !dock.classList.contains("aberto")) {
+    dock.classList.toggle("aberto", aberto);
+    $(".onb-dock-preco").setAttribute("aria-expanded", String(aberto));
+  }
+
   async function comprar(btn: HTMLButtonElement) {
     const itens = itensCarrinho();
     if (!itens.length) return;
+    alternarDock(false);
     const original = btn.innerHTML;
     root.querySelectorAll<HTMLButtonElement>(".onb-comprar").forEach((b) => (b.disabled = true));
     const erro = $(".onb-erro");
@@ -132,8 +135,9 @@ export function montarResumo(ctx: Ctx) {
   }
 
   function aoClique(b: HTMLButtonElement) {
-    if (!b.classList.contains("onb-comprar")) return false;
-    comprar(b);
+    if (b.classList.contains("onb-comprar")) comprar(b);
+    else if (b.classList.contains("onb-dock-preco")) alternarDock();
+    else return false;
     return true;
   }
 

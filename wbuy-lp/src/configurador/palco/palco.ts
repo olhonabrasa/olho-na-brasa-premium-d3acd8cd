@@ -102,11 +102,12 @@ export function montarPalco(ctx: Ctx, { aoEscolher, aoDesenhar }: Opcoes) {
       instalacao: s.inst,
       ambiente: s.amb,
       grelhas: s.modo === "pecas" ? grelhasPorPeca(s.m) : undefined,
+      // o Kit Premium leva um espeto duplo e um simples (barra chata)
       espetos:
         s.modo === "pecas"
           ? espetosPorPeca(s.m)
-          : Array.from({ length: comp.espetos.quantidade }, () => ({
-              tipo: "espeto_duplo" as const,
+          : Array.from({ length: comp.espetos.quantidade }, (_, i) => ({
+              tipo: i === 1 ? ("espeto_chata" as const) : ("espeto_duplo" as const),
               comprimentoCm: comp.espetos.comprimentoCm,
             })),
       acessorios: s.acc,

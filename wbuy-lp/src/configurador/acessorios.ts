@@ -5,8 +5,13 @@ import { preco } from "../wbuy";
 import { brl } from "../util";
 import type { Ctx } from "./estado";
 
+const CHECK =
+  '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 4.8 9 10 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
 export function montarAcessorios(ctx: Ctx) {
   const { root, $, s } = ctx;
+  /** o acessório que a pessoa acabou de tocar: só ele anima a troca do rótulo */
+  let tocado: AccId | null = null;
 
   function render() {
     const combo = s.acc.giratorio && s.acc.cesto;
@@ -14,14 +19,20 @@ export function montarAcessorios(ctx: Ctx) {
       const id = b.dataset.accToggle as AccId;
       const on = s.acc[id];
       b.setAttribute("aria-pressed", String(on));
-      const rot = b.querySelector(".onb-acc-acao");
-      if (rot)
-        rot.textContent = on
-          ? "No seu kit ✓"
-          : b.classList.contains("onb-acc")
-            ? "Adicionar"
-            : "Adicionar ao kit";
+      const rot = b.querySelector<HTMLElement>(".onb-acc-acao");
+      if (!rot) return;
+      if (b.classList.contains("onb-acc-btn")) {
+        // cartão do passo 4: "Adicionar" vira "Adicionado ✓", com a troca animada só no tocado
+        b.closest(".onb-acc")?.classList.toggle("no-kit", on);
+        rot.innerHTML = on ? `${CHECK}Adicionado` : "Adicionar";
+        if (id === tocado) {
+          rot.classList.remove("troca");
+          void rot.offsetWidth; // reinicia a animação
+          rot.classList.add("troca");
+        }
+      } else rot.textContent = on ? "No seu kit ✓" : "Adicionar ao kit"; // dobra de acessórios
     });
+    tocado = null;
     root.querySelectorAll<HTMLButtonElement>("[data-combo]").forEach((b) => {
       b.setAttribute("aria-pressed", String(combo));
       b.querySelector(".onb-acc-acao")!.textContent = combo
@@ -49,6 +60,7 @@ export function montarAcessorios(ctx: Ctx) {
 
   function alternar(id: AccId, on?: boolean) {
     s.acc[id] = on ?? !s.acc[id];
+    tocado = id;
     ctx.acoes.desenhar();
   }
 
@@ -73,12 +85,6 @@ export function montarAcessorios(ctx: Ctx) {
       root.querySelectorAll("[data-preco-combo]").forEach((el) => (el.textContent = brl(p.valor)));
   });
 
-  function aoChange(t: HTMLInputElement) {
-    if (!t.dataset.accCheck) return false;
-    alternar(t.dataset.accCheck as AccId, t.checked);
-    return true;
-  }
-
   function aoClique(b: HTMLButtonElement) {
     if (b.dataset.accToggle) alternar(b.dataset.accToggle as AccId);
     else if (b.hasAttribute("data-combo")) alternarCombo();
@@ -86,5 +92,5 @@ export function montarAcessorios(ctx: Ctx) {
     return true;
   }
 
-  return { render, alternar, aoChange, aoClique };
+  return { render, alternar, aoClique };
 }

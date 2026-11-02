@@ -1,6 +1,6 @@
 // Estado do configurador e o contexto que todos os passos compartilham.
 import type { Composicao } from "@/lib/kitComposition";
-import { faixaKit, montagemSugerida, type Grupo, type Montagem } from "../builder";
+import { montagemSugerida, type Grupo, type Montagem } from "../builder";
 import { AMBIENTES, type AccId } from "../conteudo";
 import type { BuilderStage } from "./palco/builderStage";
 import type { Acessorios, Ambiente, Instalacao } from "./palco/cena3d";
@@ -10,6 +10,7 @@ export type Estado = {
   a: number;
   b: number;
   modo: Modo;
+  /** montagem peça por peça sugerida para a medida (hoje só alimenta o 3D fora da faixa do kit) */
   m: Montagem;
   foco: Grupo | null;
   inst: Instalacao;
@@ -19,37 +20,32 @@ export type Estado = {
   medidas: boolean;
 };
 
-/** Estado de partida: medidas, modo, instalação e churrasqueira vêm da URL (deep link). */
+/** Estado de partida do Kit Premium: medidas e churrasqueira vêm da URL (deep link ?a=70&b=60&amb=fechada). */
 export function estadoInicial(params: URLSearchParams): Estado {
   const a0 = Number(params.get("a")) || 70;
   const b0 = Number(params.get("b")) || 60;
-  const inst: Instalacao = params.get("inst") === "cooktop" ? "cooktop" : "suspenso";
   const ambParam = params.get("amb") as Ambiente | null;
-  const s: Estado = {
+  return {
     a: a0,
     b: b0,
-    modo: params.get("modo") === "pecas" ? "pecas" : "kit",
+    modo: "kit",
     m: montagemSugerida(a0, b0),
     foco: null,
-    inst,
+    inst: "suspenso",
+    // bancada é cenário do cooktop, que só existe no modo "livre" (item 6)
     amb:
-      ambParam && AMBIENTES.some((x) => x.id === ambParam)
+      ambParam && ambParam !== "bancada" && AMBIENTES.some((x) => x.id === ambParam)
         ? ambParam
-        : inst === "cooktop"
-          ? "bancada"
-          : "gourmet",
+        : "fechada",
     acc: { giratorio: false, cesto: false, bandeja: false, defumador: false },
     medidas: false,
   };
-  if (!faixaKit(s.a, s.b)) s.modo = "pecas";
-  return s;
 }
 
 /** Ações que um passo chama em outro. Preenchidas pelo KitConfigurador depois de criar todos. */
 export type Acoes = {
   desenhar: () => void;
   fecharPop: () => void;
-  definirModo: (modo: Modo) => void;
   definirInstalacao: (inst: Instalacao) => void;
   alternarAcessorio: (id: AccId, on?: boolean) => void;
   irMontador: () => void;

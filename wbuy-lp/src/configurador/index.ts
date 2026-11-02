@@ -44,7 +44,7 @@ export function KitConfigurador(root: HTMLElement, s: Estado, { reduzido, params
   const irMontador = () =>
     $("#onb-montador").scrollIntoView({ behavior: reduzido ? "auto" : "smooth", block: "start" });
 
-  // o palco preso para logo abaixo do que está fixo acima dele (a barra do produto, no desktop)
+  // o palco e o resumo presos param logo abaixo do que está fixo acima deles (a barra do produto)
   const barra = $(".onb-barra-dentro");
   const medirNav = () =>
     root.style.setProperty(
@@ -56,7 +56,8 @@ export function KitConfigurador(root: HTMLElement, s: Estado, { reduzido, params
 
   // ---------- estado -> tela ----------
   function desenhar() {
-    ctx.comp = s.modo === "kit" ? composicaoKit(s.a, s.b) : composicaoMontagem(s.m, s.b);
+    // fora da faixa do kit o 3D mostra a montagem sugerida, só para a pessoa ver o tamanho
+    ctx.comp = composicaoKit(s.a, s.b) ?? composicaoMontagem(s.m, s.b);
     palco.atualizar();
     cotas.posicionar();
     passos.atualizarLegenda();
@@ -69,7 +70,6 @@ export function KitConfigurador(root: HTMLElement, s: Estado, { reduzido, params
   Object.assign(ctx.acoes, {
     desenhar,
     fecharPop: pecas.fecharPop,
-    definirModo: pecas.definirModo,
     definirInstalacao: churrasqueira.definirInstalacao,
     alternarAcessorio: acessorios.alternar,
     irMontador,
@@ -78,21 +78,14 @@ export function KitConfigurador(root: HTMLElement, s: Estado, { reduzido, params
   } satisfies Acoes);
 
   // ---------- eventos: cada passo diz se o alvo era dele ----------
-  root.addEventListener("input", (e) => {
-    const t = e.target as HTMLInputElement;
-    medidas.aoInput(t) || pecas.aoInput(t);
-  });
-  root.addEventListener("change", (e) => {
-    const t = e.target as HTMLInputElement;
-    medidas.aoChange(t) || pecas.aoChange(t) || acessorios.aoChange(t);
-  });
+  root.addEventListener("input", (e) => medidas.aoInput(e.target as HTMLInputElement));
+  root.addEventListener("change", (e) => medidas.aoChange(e.target as HTMLInputElement));
   root.addEventListener("click", (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
     if (!b || b.disabled) return;
     if (b.hasAttribute("data-whats"))
-      return abrirWhats(`Quero o kit ${s.inst} para ${s.a}x${s.b} cm`);
-    if (pecas.aoClique(b) || churrasqueira.aoClique(b) || acessorios.aoClique(b)) return;
-    if (resumo.aoClique(b)) return;
+      return abrirWhats(`Quero o Kit Premium para ${s.a}x${s.b} cm`);
+    if (churrasqueira.aoClique(b) || acessorios.aoClique(b) || resumo.aoClique(b)) return;
     if (b.hasAttribute("data-ir-montador")) irMontador();
   });
   document.addEventListener("keydown", (e) => {

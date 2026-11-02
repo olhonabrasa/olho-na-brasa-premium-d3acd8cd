@@ -6,7 +6,7 @@ import type { Ctx } from "./estado";
 export function montarPassos(ctx: Ctx) {
   const cartoes = [...ctx.root.querySelectorAll<HTMLElement>(".onb-painel .onb-passo")];
   const legenda = ctx.$(".onb-palco-legenda");
-  const numerados = cartoes.filter((c) => !c.classList.contains("onb-resumo")).length;
+  const total = cartoes.length;
   let ativo: HTMLElement | null = null;
 
   // o cartão que cruza a faixa central da viewport (10% da altura) é o ativo
@@ -14,7 +14,8 @@ export function montarPassos(ctx: Ctx) {
     (es) => es.forEach((e) => e.isIntersecting && ativar(e.target as HTMLElement)),
     { rootMargin: "-45% 0px -45% 0px" },
   );
-  cartoes.forEach((c) => observador.observe(c));
+  // o resumo preso no topo da coluna (desktop) cruza o meio da tela sem a pessoa rolar: não conta
+  cartoes.forEach((c) => getComputedStyle(c).position !== "sticky" && observador.observe(c));
 
   function ativar(c: HTMLElement) {
     if (c === ativo) return;
@@ -30,16 +31,11 @@ export function montarPassos(ctx: Ctx) {
     atualizarLegenda();
   }
 
-  /** "70 × 60 cm · Fechada · passo 2 de 5" (ou "· resumo"). */
+  /** "70 × 60 cm · Fechada · passo 2 de 5". */
   function atualizarLegenda() {
     const { s, passo } = ctx;
     const amb = AMBIENTES.find((x) => x.id === s.amb)!.nome;
-    const onde = !passo
-      ? ""
-      : ativo?.classList.contains("onb-resumo")
-        ? " · resumo"
-        : ` · passo ${passo} de ${numerados}`;
-    legenda.textContent = `${s.a} × ${s.b} cm · ${amb}${onde}`;
+    legenda.textContent = `${s.a} × ${s.b} cm · ${amb}${passo ? ` · passo ${passo} de ${total}` : ""}`;
   }
 
   return { atualizarLegenda };
