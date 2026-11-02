@@ -30,8 +30,9 @@ export function estadoInicial(
   cena: Cena,
   herdar?: { a: number; b: number },
 ): Estado {
-  const a0 = herdar?.a ?? (Number(params.get("a")) || 70);
-  const b0 = herdar?.b ?? (Number(params.get("b")) || 60);
+  const encaixar = (v: number, [min, max]: [number, number]) => Math.min(Math.max(v, min), max);
+  const a0 = encaixar(herdar?.a ?? (Number(params.get("a")) || 70), cena.limites.a);
+  const b0 = encaixar(herdar?.b ?? (Number(params.get("b")) || 60), cena.limites.b);
   const instParam = params.get("inst") as Instalacao | null;
   const inst = instParam && cena.instalacoes.includes(instParam) ? instParam : cena.instalacoes[0];
   const ambParam = params.get("amb") as Ambiente | null;
