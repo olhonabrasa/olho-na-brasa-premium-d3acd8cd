@@ -12,7 +12,10 @@
     "format": "prettier --write .",
     "test": "node --test src/lib/*.test.ts",
     "dev:wbuy": "vite --config wbuy-lp/vite.config.ts",
-    "build:wbuy": "vite build --config wbuy-lp/vite.config.ts"
+    "build:wbuy": "vite build --config wbuy-lp/vite.config.ts",
+    "test:wbuy": "playwright test --config wbuy-lp/playwright.config.ts",
+    "orcamento:wbuy": "node wbuy-lp/scripts/orcamento.mjs",
+    "lh:wbuy": "lhci autorun --config=wbuy-lp/lighthouserc.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -71,7 +74,9 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@eslint/js": "^9.32.0",
+    "@lhci/cli": "^0.15.1",
     "@lovable.dev/vite-tanstack-config": "2.23.1",
     "@playwright/test": "^1.58.2",
     "@types/node": "^22.16.5",

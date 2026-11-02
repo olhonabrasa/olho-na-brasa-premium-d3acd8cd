@@ -205,7 +205,8 @@ export function createBuilderStage(
   }[] = [];
 
   new HDRLoader().load(
-    opts.assetBase + (opts.mobile ? "3d/white_home_studio_1k.hdr" : "3d/white_home_studio_2k.hdr"),
+    // 512 px (380 KB) para todos: o reflexo no inox é difuso, e o 2k (5,9 MB) estourava o orçamento
+    opts.assetBase + "3d/white_home_studio_512.hdr",
     (tex) => {
       if (disposed) return tex.dispose();
       tex.mapping = THREE.EquirectangularReflectionMapping;

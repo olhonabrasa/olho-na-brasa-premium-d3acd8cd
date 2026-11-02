@@ -13,9 +13,19 @@ Leia também o `AGENTS.md` (repositório ligado ao Lovable: nunca reescrever his
 - Build: `npm run build:wbuy` gera `public/wbuy-lp/` (kit-builder.js + chunk do palco + `img/`).
   O build vai commitado; o merge no `main` publica pelo Cloudflare Pages em
   `https://premium.olhonabrasa.com.br/wbuy-lp/`.
-- Regressão visual: `npx playwright test --config wbuy-lp/playwright.config.ts` (Chrome da
-  máquina, 390×844 / 768×1024 / 1440×900). Capturas em `wbuy-lp/tests/capturas/`; só se
-  atualizam (`--update-snapshots`) quando a mudança visual é intencional.
+- Testes: `npm run test:wbuy` (Playwright com o Chrome da máquina, 390×844 / 768×1024 /
+  1440×900; `regressao.spec.ts` compara pixels e `auditoria.spec.ts` confere nada sobre o 3D,
+  Comprar livre, cartões entre palco e barra, contraste com axe-core, CLS e a cota acompanhando a
+  régua, também sem "reduzir movimento" nos projetos `*-movimento`). Capturas em
+  `wbuy-lp/tests/capturas/`; só se atualizam (`--update-snapshots`) quando a mudança visual é
+  intencional. `LP_AO_VIVO=1` liga `ao-vivo.spec.ts` contra a loja real.
+- Orçamento: `npm run orcamento:wbuy` (bundle ≤ 350 KB gzip, textura ≤ 600 KB) e, depois do
+  build, `npm run lh:wbuy` (Lighthouse CI no build de verdade servido com gzip por
+  `wbuy-lp/scripts/servir-build.mjs`: CLS < 0,1, scripts ≤ 350 KB). O workflow
+  `.github/workflows/wbuy-lp.yml` roda tudo nos PRs que tocam a LP.
+- Modo simulado: fora de `olhonabrasa.com.br` e da prévia `olhonabrasa.lojawbuy.com.br` (esta atrás
+  da flag de build `VITE_PREVIA_WBUY`, ligada por padrão). `?simulado=1` força o simulado em
+  qualquer host.
 - Página de teste: `npm run dev:wbuy` (http://localhost:5181, modo simulado: preços de exemplo,
   carrinho não muda). Mídia nova só aparece depois de build + reiniciar o dev server.
 - O que vai colado na Wbuy: `wbuy-lp/wbuy/pagina-conteudo.html` (página de conteúdo ID 29577,
