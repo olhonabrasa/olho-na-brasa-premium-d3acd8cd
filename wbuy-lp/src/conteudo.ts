@@ -82,48 +82,6 @@ export const ACC_INFO: Record<AccId, { titulo: string; texto: string; img: strin
   },
 };
 
-/** Pílulas do 3D (estilo "Design" da Apple): cada uma acende um grupo de peças. */
-export const PILULAS: { id: string; nome: string; texto: string; partes: string[] }[] = [
-  {
-    id: "medidas",
-    nome: "Onde medir",
-    texto:
-      "A é a largura da boca, de parede a parede. B é o comprimento interno, da boca até o fundo.",
-    partes: [],
-  },
-  {
-    id: "suporte",
-    nome: "Suporte suspenso",
-    texto: "Três alturas de brasa num suporte só. Sob encomenda, com quatro ou cinco níveis.",
-    partes: ["suporte", "cooktop_base"],
-  },
-  {
-    id: "grelhas",
-    nome: "Grelhas",
-    texto:
-      "Uruguaia testada com até 8 kg. Argentina com canaletas que levam a gordura para o coletor.",
-    partes: ["grelha_uruguaia", "grelha_argentina"],
-  },
-  {
-    id: "espetos",
-    nome: "Espetos",
-    texto: "Duplo, barra chata ou V, com cabos de alto brilho. Cada espeto aguenta 5 kg de carne.",
-    partes: ["espeto_", "acc_giratorio"],
-  },
-  {
-    id: "descanso",
-    nome: "Grelha auxiliar",
-    texto: "No nível de cima, mantém a carne pronta quente sem passar do ponto.",
-    partes: ["grelha_descanso"],
-  },
-  {
-    id: "acabamento",
-    nome: "Inox 304",
-    texto: "Solda invisível e seis processos de polimento. Não enferruja nem com maresia.",
-    partes: ["suporte", "grelha_", "espeto_", "acc_"],
-  },
-];
-
 /** Destaques (carrossel de vídeos curtos). "vertical" = vídeo em pé, mostrado de lado. */
 export const DESTAQUES: { id: string; titulo: string; texto: string; vertical?: boolean }[] = [
   {

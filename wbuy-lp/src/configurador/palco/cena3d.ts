@@ -4,7 +4,6 @@
 // Mesmas unidades e eixos do buildKit: metros, y para cima, o suporte no plano
 // z = -0,1 com as grelhas saindo para +z; base do suporte em y = 0,16.
 import * as THREE from "three";
-import { medidasGeo, type MedidasGeo } from "./medidasGeo";
 
 export const BASE_Y = 0.16;
 export const FRAME_Z = -0.1;
@@ -452,49 +451,6 @@ export function posicionarAcessorio(
 export function posicionarDefumador(peca: THREE.Object3D, larguraM: number, cooktop: boolean) {
   const h = (peca.userData.alturaExtra as number) ?? 0.03;
   peca.position.set(-larguraM / 2 + 0.11, (cooktop ? BASE_Y - 0.33 : 0.02) + h, FRAME_Z + 0.22);
-}
-
-// ---------- medidas A e B (setas sobre a cena) ----------
-
-export { medidasGeo };
-/** Setas pretas com pontas e marcas de parede, sempre visíveis por cima do kit (o inox e a parede são claros). */
-export function criarSetas(geo: MedidasGeo) {
-  const g = new THREE.Group();
-  g.name = "medidas";
-  const mat = new THREE.MeshBasicMaterial({ color: 0x0a0a0a, depthTest: false, transparent: true });
-  const seta = (p1: THREE.Vector3Tuple, p2: THREE.Vector3Tuple) => {
-    const a = new THREE.Vector3(...p1);
-    const b = new THREE.Vector3(...p2);
-    const dir = new THREE.Vector3().subVectors(b, a).normalize();
-    const ponta = 0.028;
-    g.add(
-      tubo(
-        a.clone().addScaledVector(dir, ponta),
-        b.clone().addScaledVector(dir, -ponta),
-        0.0034,
-        mat,
-        8,
-      ),
-    );
-    const pontas: [THREE.Vector3, THREE.Vector3][] = [
-      [a, dir.clone().negate()],
-      [b, dir],
-    ];
-    for (const [pt, d] of pontas) {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.011, ponta, 14), mat);
-      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d);
-      cone.position.copy(pt).addScaledVector(d, -ponta / 2);
-      g.add(cone);
-      const marca = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.05, 0.004), mat);
-      marca.position.copy(pt);
-      g.add(marca);
-    }
-  };
-  seta(geo.a[0], geo.a[1]);
-  seta(geo.b[0], geo.b[1]);
-  g.traverse((o) => (o.renderOrder = 10));
-  g.userData.mat = mat;
-  return g;
 }
 
 // ---------- a churrasqueira ----------

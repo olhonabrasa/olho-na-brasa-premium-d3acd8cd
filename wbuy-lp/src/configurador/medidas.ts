@@ -24,11 +24,12 @@ export function montarMedidas(ctx: Ctx) {
     if (document.activeElement !== inp) inp.value = String(v);
     range.value = String(v);
     pintarRegua(range);
-    if (!final) return;
+    if (!final) return ctx.acoes.previaMedida(nome, v);
     if (nome === "a") s.a = v;
     else s.b = v;
     s.m = montagemSugerida(s.a, s.b);
     if (s.modo === "kit" && !faixaKit(s.a, s.b)) s.modo = "pecas";
+    ctx.acoes.previaMedida(nome, null);
     ctx.acoes.desenhar();
   }
 
