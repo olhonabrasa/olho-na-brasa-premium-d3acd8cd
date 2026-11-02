@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Monte seu kit (build, para o Lighthouse)</title>
+    <style>
+      body {
+        margin: 0;
+        background: #fff;
+      }
+      .fake-topo,
+      .fake-rodape {
+        background: #111;
+        color: #aaa;
+        font: 13px system-ui;
+        padding: 18px;
+        text-align: center;
+      }
+      .container {
+        width: 100%;
+      }
+      /* chat flutuante da loja: mesmos ids e medidas do tema */
+      #lb-widget-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+      }
+      #lb-toggle-btn {
+        width: 60px;
+        height: 60px;
+        background: #25d366;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fake-topo">Topo da loja Wbuy (simulado)</div>
+    <div class="container">
+      <!-- igual ao que vai colado na página de conteúdo da Wbuy -->
+      <div id="onb-kit-lp"></div>
+    </div>
+    <div class="fake-rodape">Rodapé da loja (simulado)</div>
+    <div id="lb-widget-container">
+      <div id="lb-chat-window"></div>
+      <div id="lb-toggle-btn"></div>
+    </div>
+    <!-- o mesmo bundle que vai para premium.olhonabrasa.com.br/wbuy-lp/ -->
+    <script type="module" src="/wbuy-lp/kit-builder.js"></script>
+  </body>
+</html>

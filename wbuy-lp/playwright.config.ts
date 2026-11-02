@@ -44,6 +44,31 @@ export default defineConfig({
       },
     },
     { name: "desktop", use: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 } },
+    // as mesmas três viewports sem "reduzir movimento": só a auditoria (palco preso, cotas,
+    // Comprar livre, prints de cada passo); a regressão de pixels fica nos projetos acima
+    {
+      name: "celular-movimento",
+      testMatch: /auditoria/,
+      metadata: { movimento: true },
+      use: { ...devices["iPhone 13"], channel: "chrome", defaultBrowserType: "chromium" },
+    },
+    {
+      name: "tablet-movimento",
+      testMatch: /auditoria/,
+      metadata: { movimento: true },
+      use: {
+        viewport: { width: 768, height: 1024 },
+        deviceScaleFactor: 1,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+    {
+      name: "desktop-movimento",
+      testMatch: /auditoria/,
+      metadata: { movimento: true },
+      use: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 },
+    },
   ],
   webServer: {
     command:

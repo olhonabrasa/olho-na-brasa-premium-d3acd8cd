@@ -34,3 +34,4 @@ dist-ssr
 
 # saída do Playwright (regressão da LP Wbuy)
 .playwright/
+.lighthouseci/

@@ -1,0 +1,43 @@
+# LP "Monte seu kit" (Wbuy): build, orçamento de peso, regressão visual e Lighthouse nos PRs.
+name: LP Wbuy
+
+on:
+  pull_request:
+    paths:
+      - "wbuy-lp/**"
+      - "public/3d/**"
+      - "src/lib/kitComposition.ts"
+      - "src/components/checkout/kit3d/geometry.ts"
+      - ".github/workflows/wbuy-lp.yml"
+
+jobs:
+  lp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # o repositório usa o bun (bun.lock); sem --frozen-lockfile porque devDependencies da LP
+      # foram adicionadas sem bun na máquina de desenvolvimento
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Build do bundle
+        run: npm run build:wbuy
+      - name: Orçamento (bundle ≤ 350 KB gzip, textura ≤ 600 KB)
+        run: node wbuy-lp/scripts/orcamento.mjs
+      - name: Chrome para o Playwright e o Lighthouse
+        run: npx playwright install --with-deps chrome
+      - name: Regressão visual e auditoria
+        run: npx playwright test --config wbuy-lp/playwright.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright
+          path: |
+            .playwright/relatorio
+            .playwright/saida
+          retention-days: 14
+      - name: Lighthouse CI (CLS < 0,1; scripts ≤ 350 KB)
+        run: npx lhci autorun --config=wbuy-lp/lighthouserc.cjs
