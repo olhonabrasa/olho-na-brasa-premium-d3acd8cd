@@ -12,6 +12,8 @@ type Opcoes = {
   aoDesenhar: () => void;
 };
 
+const CHAVE_DICA = "onb-dica-3d";
+
 export function montarPalco(ctx: Ctx, { aoEscolher, aoDesenhar }: Opcoes) {
   const { $, params } = ctx;
   const stageEl = $(".onb-stage");
@@ -56,6 +58,7 @@ export function montarPalco(ctx: Ctx, { aoEscolher, aoDesenhar }: Opcoes) {
         stageEl.classList.add("com-3d");
         ctx.acoes.desenhar();
         stage.setActive(true);
+        dicaPrimeiraVisita();
         if (params.has("fps"))
           setInterval(() => ($(".onb-fps").textContent = JSON.stringify(stage.stats())), 1000);
       })
@@ -64,6 +67,29 @@ export function montarPalco(ctx: Ctx, { aoEscolher, aoDesenhar }: Opcoes) {
         stageEl.classList.add("sem-3d");
         ctx.acoes.desenhar();
       });
+  }
+
+  /** "Arraste para girar · toque nas peças" por 2 s, só na primeira visita (guardado no aparelho). */
+  function dicaPrimeiraVisita() {
+    let vista = false;
+    try {
+      vista = !!localStorage.getItem(CHAVE_DICA);
+    } catch {
+      /* sem armazenamento: mostra e segue */
+    }
+    if (vista) return;
+    const dica = $(".onb-palco-dica");
+    dica.hidden = false;
+    requestAnimationFrame(() => dica.classList.add("on"));
+    setTimeout(() => {
+      dica.classList.remove("on");
+      setTimeout(() => (dica.hidden = true), 320);
+      try {
+        localStorage.setItem(CHAVE_DICA, "1");
+      } catch {
+        /* idem */
+      }
+    }, 2000);
   }
 
   /** Leva a composição atual para o 3D, o desenho de reserva e o leitor de tela. */
@@ -85,7 +111,6 @@ export function montarPalco(ctx: Ctx, { aoEscolher, aoDesenhar }: Opcoes) {
             })),
       acessorios: s.acc,
       boca: { a: s.a, b: s.b },
-      medidas: s.medidas,
     });
     $(".onb-fallback").innerHTML = desenhoFrente(comp, fantasma.length > 0);
     canvas.setAttribute("aria-label", descreverParaLeitor());

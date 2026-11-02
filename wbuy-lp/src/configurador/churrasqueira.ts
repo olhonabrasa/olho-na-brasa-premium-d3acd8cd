@@ -1,10 +1,9 @@
 // Passo da churrasqueira: instalação (suspenso ou cooktop) e o cenário em volta do kit.
-import { AMBIENTES } from "../conteudo";
 import type { Ctx } from "./estado";
 import type { Ambiente, Instalacao } from "./palco/cena3d";
 
 export function montarChurrasqueira(ctx: Ctx) {
-  const { root, $, s } = ctx;
+  const { root, s } = ctx;
 
   function renderEscolhas() {
     root
@@ -13,10 +12,6 @@ export function montarChurrasqueira(ctx: Ctx) {
     root
       .querySelectorAll<HTMLButtonElement>("[data-amb]")
       .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.amb === s.amb)));
-    $(".onb-etiqueta-palco").textContent =
-      (s.inst === "cooktop" ? "Cooktop" : "Suspenso") +
-      " · " +
-      AMBIENTES.find((x) => x.id === s.amb)!.nome;
   }
 
   function definirInstalacao(inst: Instalacao) {

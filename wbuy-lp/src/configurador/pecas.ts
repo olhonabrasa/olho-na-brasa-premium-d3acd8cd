@@ -37,7 +37,6 @@ export function montarPecas(ctx: Ctx) {
   function escolherNo3D(parte: string | null, x: number, y: number) {
     if (!parte) return fecharPop();
     ctx.stage?.highlight(parte);
-    ctx.acoes.fecharPilulas();
     if (parte.startsWith("acc_"))
       return abrirPopAcessorio(parte.replace("acc_", "") as AccId, x, y);
     if (parte === "cooktop_base") {

@@ -809,18 +809,21 @@ html.onb-dock-aberto #lb-widget-container {
 }
 #onb-kit-lp .onb-builder {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(370px, 1fr);
+  grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
   gap: 24px;
-  max-width: 1280px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
   align-items: start;
 }
-#onb-kit-lp .onb-stage {
+/* o palco fica preso enquanto as perguntas rolam; --nav-h é o que está fixo acima dele (medido no runtime) */
+#onb-kit-lp .onb-palco {
   position: sticky;
-  top: calc(var(--onb-topo) + var(--onb-barra-h) + 14px);
-  height: min(calc(100vh - var(--onb-topo) - var(--onb-barra-h) - 28px), 800px);
-  min-height: 460px;
+  top: calc(var(--nav-h, 0px) + 14px);
+}
+#onb-kit-lp .onb-stage {
+  position: relative;
+  aspect-ratio: 16 / 10;
   border-radius: 30px;
   background: radial-gradient(
     120% 90% at 50% 25%,
@@ -885,49 +888,40 @@ html.onb-dock-aberto #lb-widget-container {
 #onb-kit-lp .onb-stage.sem-3d .onb-carregando {
   opacity: 0;
 }
-#onb-kit-lp .onb-etiqueta-palco {
-  position: absolute;
-  top: 18px;
-  right: 18px;
+/* legenda do palco: fora do 3D, diz medida, churrasqueira e em que passo a pessoa está */
+#onb-kit-lp .onb-palco-legenda {
+  margin-top: 10px;
+  text-align: center;
   font-size: 13px;
-  font-weight: 600;
-  color: var(--onb-claro-txt);
-  background: rgb(40 40 44 / 0.7);
-  backdrop-filter: blur(12px);
-  padding: 6px 12px;
-  border-radius: 999px;
-  pointer-events: none;
+  font-weight: 500;
+  color: var(--inox-2);
+  font-variant-numeric: tabular-nums;
 }
-#onb-kit-lp .onb-barra {
+/* dica de 2 s, só na primeira visita */
+#onb-kit-lp .onb-palco-dica {
   position: absolute;
-  left: 16px;
-  right: 16px;
+  left: 50%;
   bottom: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  pointer-events: none;
-}
-#onb-kit-lp .onb-dica {
-  font-size: 13px;
-  color: var(--onb-claro-suave);
-  background: rgb(40 40 44 / 0.7);
-  backdrop-filter: blur(12px);
   padding: 6px 12px;
   border-radius: 999px;
-}
-#onb-kit-lp .onb-stage.sem-3d :is(.onb-dica, [data-reset], .onb-pilulas) {
-  display: none;
-}
-#onb-kit-lp [data-reset] {
-  pointer-events: auto;
+  background: color-mix(in srgb, var(--carvao) 85%, transparent);
+  border: 1px solid var(--fio);
+  color: var(--osso);
   font-size: 13px;
-  font-weight: 600;
-  color: var(--onb-texto);
-  background: var(--onb-branco);
-  padding: 8px 14px;
-  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition:
+    opacity var(--t-base) var(--ease),
+    transform var(--t-base) var(--ease);
+}
+#onb-kit-lp .onb-palco-dica.on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+#onb-kit-lp .onb-palco-dica[hidden] {
+  display: none;
 }
 #onb-kit-lp .onb-fps {
   position: absolute;
@@ -937,193 +931,70 @@ html.onb-dock-aberto #lb-widget-container {
   color: var(--onb-cinza-medio);
 }
 
-/* pílulas: como o "Design" da Apple, cada uma explica e acende uma parte do kit */
-#onb-kit-lp .onb-pilulas {
-  position: absolute;
-  z-index: 2;
-  top: 18px;
-  left: 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  max-width: min(320px, calc(100% - 36px));
-}
-#onb-kit-lp .onb-pilula {
-  display: grid;
-  grid-template-columns: 24px auto;
-  align-items: center;
-  column-gap: 10px;
-  padding: 9px 16px 9px 10px;
-  border-radius: 22px;
-  background: rgb(36 36 40 / 0.72);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  color: var(--onb-claro-txt);
-  text-align: left;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
-  transition:
-    background-color 0.2s ease,
-    transform 0.16s ease-out;
-}
-#onb-kit-lp .onb-pilula:active {
-  transform: scale(0.97);
-}
-#onb-kit-lp .onb-pilula strong {
-  font-size: 14px;
-  font-weight: 600;
-}
-#onb-kit-lp .onb-pilula-mais {
-  position: relative;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1.5px solid rgb(255 255 255 / 0.85);
-  transition: transform 0.3s var(--onb-ease);
-}
-#onb-kit-lp .onb-pilula-mais::before,
-#onb-kit-lp .onb-pilula-mais::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 10px;
-  height: 1.5px;
-  margin: -0.75px 0 0 -5px;
-  background: var(--onb-branco);
-}
-#onb-kit-lp .onb-pilula-mais::after {
-  transform: rotate(90deg);
-}
-#onb-kit-lp .onb-pilula-txt {
-  grid-column: 2;
-  display: none;
-  font-size: 14px;
-  line-height: 1.4;
-  color: rgb(245 245 247 / 0.86);
-  margin-top: 6px;
-  max-width: 34ch;
-}
-#onb-kit-lp .onb-pilula[aria-expanded="true"] {
-  background: rgb(52 52 58 / 0.86);
-}
-#onb-kit-lp .onb-pilula[aria-expanded="true"] .onb-pilula-mais {
-  transform: rotate(45deg);
-  background: var(--onb-laranja);
-  border-color: var(--onb-laranja);
-}
-#onb-kit-lp .onb-pilula[aria-expanded="true"] .onb-pilula-txt {
-  display: block;
-  animation: onb-entra-txt 0.3s var(--onb-ease);
-}
-@keyframes onb-entra-txt {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-
-/* etiquetas A e B sobre as setas */
-#onb-kit-lp .onb-medidas-rot {
+/* cotas A e B: a única coisa sobre o 3D, e só no passo de medidas (fusão de 180 ms) */
+#onb-kit-lp .onb-cotas {
   position: absolute;
   inset: 0;
-  pointer-events: none;
   z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease);
 }
-#onb-kit-lp .onb-medidas-rot > span {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: max-content;
-  max-width: 240px;
-  margin: -46px 0 0 -110px;
-  padding: 6px 12px 6px 6px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.95);
-  color: var(--onb-tinta);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.2;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
+#onb-kit-lp .onb-cotas.on {
+  opacity: 1;
 }
-#onb-kit-lp .onb-medidas-rot .onb-rot-b {
-  margin: 10px 0 0 -16px;
-}
-#onb-kit-lp .onb-medidas-rot i {
-  font-style: normal;
-}
-#onb-kit-lp .onb-medidas-rot b {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--onb-laranja);
-  color: var(--onb-branco);
-  font-size: 13px;
-}
-#onb-kit-lp .onb-medidas-rot em {
-  font-style: normal;
-  color: var(--onb-laranja-forte);
-  white-space: nowrap;
-}
-#onb-kit-lp .onb-medidas-rot [hidden] {
+#onb-kit-lp .onb-cotas[hidden] {
   display: none;
 }
-
-/* pontos de "+" */
-#onb-kit-lp .onb-hotspots {
+#onb-kit-lp .onb-cotas svg {
   position: absolute;
   inset: 0;
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
-#onb-kit-lp .onb-hot {
+#onb-kit-lp .onb-cotas line {
+  stroke: var(--inox);
+  stroke-opacity: 0.6;
+  stroke-width: 1;
+}
+#onb-kit-lp .onb-cota {
   position: absolute;
   left: 0;
   top: 0;
-  margin: -18px 0 0 -18px;
-  pointer-events: auto;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 36px;
-  padding: 0 14px 0 4px;
+  height: 28px;
+  padding: 0 10px 0 4px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.95);
-  color: var(--onb-tinta);
-  box-shadow: 0 4px 18px rgb(0 0 0 / 0.3);
-  font-size: 13px;
-  font-weight: 600;
+  background: color-mix(in srgb, var(--carvao) 85%, transparent);
+  border: 1px solid var(--fio);
+  color: var(--osso);
   white-space: nowrap;
   will-change: transform;
+  transition: border-color var(--t-rapido) var(--ease);
 }
-#onb-kit-lp .onb-hot span {
+#onb-kit-lp .onb-cota b {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: var(--onb-laranja);
-  color: var(--onb-branco);
-  font-size: 20px;
-  line-height: 1;
-  animation: onb-pulso-hot 2.2s ease-in-out infinite;
+  background: var(--brasa);
+  color: var(--osso);
+  font-size: 12px;
+  font-weight: 700;
 }
-#onb-kit-lp .onb-hot em {
+#onb-kit-lp .onb-cota em {
   font-style: normal;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
-@keyframes onb-pulso-hot {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--onb-laranja) 45%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 8px transparent;
-  }
+/* enquanto a régua correspondente está em arraste */
+#onb-kit-lp .onb-cota.arrastando {
+  border-color: var(--brasa);
 }
 
 /* balão da peça escolhida */
@@ -1185,15 +1056,49 @@ html.onb-dock-aberto #lb-widget-container {
 
 /* painel escuro */
 #onb-kit-lp .onb-painel {
+  position: relative;
   display: grid;
   gap: 12px;
+  padding-left: 22px;
   color: var(--onb-claro-txt);
 }
+/* trilho de 1px com um ponto por passo; o ponto do passo ativo acende */
+#onb-kit-lp .onb-painel::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 32px;
+  bottom: 32px;
+  width: 1px;
+  background: var(--fio);
+}
 #onb-kit-lp .onb-passo {
+  position: relative;
   background: var(--onb-noite-2);
   border-radius: var(--onb-raio);
   padding: 22px;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px var(--fio);
+  transition: box-shadow var(--t-rapido) var(--ease);
+}
+#onb-kit-lp .onb-passo::before {
+  content: "";
+  position: absolute;
+  left: -22px;
+  top: 28px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--inox-2);
+  transition:
+    background-color var(--t-rapido) var(--ease),
+    transform var(--t-rapido) var(--ease);
+}
+#onb-kit-lp .onb-passo.ativo {
+  box-shadow: inset 0 0 0 1px var(--brasa);
+}
+#onb-kit-lp .onb-passo.ativo::before {
+  background: var(--brasa);
+  transform: scale(1.3);
 }
 #onb-kit-lp .onb-passo-t {
   font-size: 18px;
@@ -2486,49 +2391,6 @@ html.onb-dock-aberto #lb-widget-container {
     max-width: none;
     font-size: 19px;
   }
-  #onb-kit-lp .onb-builder {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 0 12px;
-  }
-  #onb-kit-lp .onb-stage {
-    top: var(--onb-topo);
-    height: 52vh;
-    height: 52svh;
-    min-height: 320px;
-    border-radius: 24px;
-    z-index: 3;
-  }
-  #onb-kit-lp .onb-pilulas {
-    top: auto;
-    bottom: 60px;
-    left: 12px;
-    right: 12px;
-    max-width: none;
-    flex-direction: row;
-    overflow-x: auto;
-    scrollbar-width: none;
-    align-items: flex-end;
-  }
-  #onb-kit-lp .onb-pilula {
-    flex: none;
-    max-width: 82%;
-    padding: 7px 14px 7px 8px;
-  }
-  #onb-kit-lp .onb-pilula strong {
-    font-size: 13px;
-    white-space: nowrap;
-  }
-  #onb-kit-lp .onb-medidas-rot > span {
-    font-size: 11px;
-    max-width: 190px;
-    margin-left: -90px;
-  }
-  #onb-kit-lp .onb-etiqueta-palco {
-    top: 12px;
-    right: 12px;
-    font-size: 12px;
-  }
   #onb-kit-lp .onb-passo {
     padding: 18px 16px;
   }
@@ -2537,13 +2399,6 @@ html.onb-dock-aberto #lb-widget-container {
   }
   #onb-kit-lp .onb-linha-fim {
     grid-column: 1 / -1;
-  }
-  #onb-kit-lp .onb-rot-a i,
-  #onb-kit-lp .onb-rot-b i {
-    display: none;
-  }
-  #onb-kit-lp .onb-medidas-rot > span {
-    margin-left: -70px;
   }
   #onb-kit-lp .onb-med {
     grid-template-columns: 74px 84px minmax(60px, 1fr);
@@ -2603,13 +2458,40 @@ html.onb-dock-aberto #lb-widget-container {
     margin: 0;
     font-size: 16px;
   }
-  #onb-kit-lp .onb-hot {
-    height: 32px;
-    font-size: 12px;
+}
+/* tablet e celular: uma coluna, palco preso no alto, trilho some */
+@media (max-width: 1023px) {
+  #onb-kit-lp .onb-builder {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 12px;
   }
-  #onb-kit-lp :is(.onb-dica, [data-reset]) {
-    font-size: 12px;
-    white-space: nowrap;
+  #onb-kit-lp .onb-palco {
+    top: var(--nav-h, 0px);
+    z-index: 3;
+    padding-bottom: 6px;
+    background: var(--onb-noite);
+  }
+  #onb-kit-lp .onb-stage {
+    aspect-ratio: auto;
+    height: clamp(260px, 46svh, 380px);
+    border-radius: 24px;
+  }
+  #onb-kit-lp .onb-palco-legenda {
+    margin-top: 8px;
+  }
+  #onb-kit-lp .onb-painel {
+    padding-left: 0;
+  }
+  #onb-kit-lp .onb-painel::before,
+  #onb-kit-lp .onb-passo::before {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  #onb-kit-lp .onb-stage {
+    height: clamp(260px, 42svh, 380px);
+    border-radius: 20px;
   }
 }
 @media (max-width: 560px) {
@@ -2619,9 +2501,6 @@ html.onb-dock-aberto #lb-widget-container {
   }
   #onb-kit-lp .onb-selos {
     grid-template-columns: 1fr;
-  }
-  #onb-kit-lp .onb-dica {
-    display: none;
   }
   #onb-kit-lp .onb-calc {
     gap: 12px;
@@ -2639,5 +2518,8 @@ html.onb-dock-aberto #lb-widget-container {
   #onb-kit-lp *::after {
     animation: none !important;
     transition: none !important;
+  }
+  #onb-kit-lp .onb-palco {
+    position: static;
   }
 }

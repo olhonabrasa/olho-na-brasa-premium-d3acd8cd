@@ -25,10 +25,8 @@ import {
   baseCooktop,
   cestoMiudos,
   criarAmbiente,
-  criarSetas,
   defumador,
   espetoGiratorio,
-  medidasGeo,
   posicionarDefumador,
   criarMateriaisCena,
   grelhaArgentina,
@@ -46,7 +44,7 @@ export type StageOptions = {
   onProgress?: (p: number) => void;
   /** clique numa peça (nome do grupo: suporte, grelha_uruguaia_0, espeto_simples_1...) ou no vazio */
   onPick?: (parte: string | null, x: number, y: number) => void;
-  /** chamado depois de cada quadro desenhado (para reposicionar os pontos de "+") */
+  /** chamado depois de cada quadro desenhado (para reposicionar as cotas sobre o canvas) */
   onRender?: () => void;
 };
 
@@ -60,8 +58,6 @@ export type UpdateOptions = {
   grelhas?: { tipo: "uruguaia" | "argentina"; larguraCm: number; comprimentoCm: number }[];
   /** uma entrada por espeto (tipo e comprimento) */
   espetos?: { tipo: "espeto_duplo" | "espeto_chata" | "espeto_v"; comprimentoCm: number }[];
-  /** setas A e B de onde medir */
-  medidas?: boolean;
   acessorios?: Acessorios;
   /** boca da churrasqueira em cm, para desenhar o cenário */
   boca?: { a: number; b: number };
@@ -323,27 +319,6 @@ export function createBuilderStage(
     scene.environmentRotation.y = ENV_ROTATION_Y + (tipo === "estudio" ? 0 : ENV_FRENTE);
   }
 
-  let setas: THREE.Group | null = null;
-  function montarSetas(o: UpdateOptions, c: Composicao) {
-    if (setas) {
-      scene.remove(setas);
-      setas.traverse((m) => m instanceof THREE.Mesh && m.geometry.dispose());
-      (setas.userData.mat as THREE.Material).dispose();
-      setas = null;
-    }
-    if (!o.medidas) return;
-    setas = criarSetas(
-      medidasGeo({
-        a: (o.boca?.a ?? c.suporteLarguraCm) / 100,
-        b: (o.boca?.b ?? 60) / 100,
-        instalacao: o.instalacao ?? "suspenso",
-        peM: c.peCm / 100,
-        suporteM: c.suporteLarguraCm / 100,
-      }),
-    );
-    scene.add(setas);
-  }
-
   function disposeKit() {
     if (!kit) return;
     scene.remove(kit);
@@ -525,7 +500,6 @@ export function createBuilderStage(
         novo.add(d);
       }
       montarAmbiente(o, c);
-      montarSetas(o, c);
       novo.updateMatrixWorld(true);
       const pecas = novo.children.slice().map(unirPeca);
       disposeKit();

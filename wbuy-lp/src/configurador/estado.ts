@@ -15,6 +15,7 @@ export type Estado = {
   inst: Instalacao;
   amb: Ambiente;
   acc: Acessorios;
+  /** o passo das medidas está na tela (as cotas A e B só aparecem nele) */
   medidas: boolean;
 };
 
@@ -38,7 +39,7 @@ export function estadoInicial(params: URLSearchParams): Estado {
           ? "bancada"
           : "gourmet",
     acc: { giratorio: false, cesto: false, bandeja: false, defumador: false },
-    medidas: true,
+    medidas: false,
   };
   if (!faixaKit(s.a, s.b)) s.modo = "pecas";
   return s;
@@ -48,12 +49,14 @@ export function estadoInicial(params: URLSearchParams): Estado {
 export type Acoes = {
   desenhar: () => void;
   fecharPop: () => void;
-  fecharPilulas: () => void;
-  alterar: (g: Grupo, d: number) => void;
   definirModo: (modo: Modo) => void;
   definirInstalacao: (inst: Instalacao) => void;
   alternarAcessorio: (id: AccId, on?: boolean) => void;
   irMontador: () => void;
+  /** mostra ou esconde as cotas A e B sobre o 3D */
+  cotas: (on: boolean) => void;
+  /** valor da régua em arraste (null quando solta): a cota acompanha em tempo real */
+  previaMedida: (nome: "a" | "b", valor: number | null) => void;
 };
 
 export type Ctx = {
@@ -65,5 +68,7 @@ export type Ctx = {
   /** 3D (null até carregar) e a composição desenhada por último */
   stage: BuilderStage | null;
   comp: Composicao | null;
+  /** passo na tela, de 1 em diante (0 = nenhum ainda) */
+  passo: number;
   acoes: Acoes;
 };

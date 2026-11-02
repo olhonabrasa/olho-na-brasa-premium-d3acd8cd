@@ -8,9 +8,8 @@ import { montarChurrasqueira } from "./churrasqueira";
 import type { Acoes, Ctx, Estado } from "./estado";
 import { montarMedidas } from "./medidas";
 import { montarCotas } from "./palco/cotas";
-import { montarDestaque } from "./palco/destaque";
-import { montarHotspots } from "./palco/hotspots";
 import { montarPalco } from "./palco/palco";
+import { montarPassos } from "./passos";
 import { montarPecas } from "./pecas";
 import { montarResumo } from "./resumo";
 
@@ -28,35 +27,39 @@ export function KitConfigurador(root: HTMLElement, s: Estado, { reduzido, params
     reduzido,
     stage: null,
     comp: null,
+    passo: 0,
     // preenchido logo abaixo, depois que os passos existem
     acoes: {} as Acoes,
   };
 
   const cotas = montarCotas(ctx);
-  const hotspots = montarHotspots(ctx);
   const pecas = montarPecas(ctx);
-  const palco = montarPalco(ctx, {
-    aoEscolher: pecas.escolherNo3D,
-    aoDesenhar: () => {
-      hotspots.posicionar();
-      cotas.posicionar();
-    },
-  });
-  const destaque = montarDestaque(ctx);
+  const palco = montarPalco(ctx, { aoEscolher: pecas.escolherNo3D, aoDesenhar: cotas.posicionar });
   const medidas = montarMedidas(ctx);
   const churrasqueira = montarChurrasqueira(ctx);
   const acessorios = montarAcessorios(ctx);
   const resumo = montarResumo(ctx);
+  const passos = montarPassos(ctx);
 
   const irMontador = () =>
     $("#onb-montador").scrollIntoView({ behavior: reduzido ? "auto" : "smooth", block: "start" });
+
+  // o palco preso para logo abaixo do que está fixo acima dele (a barra do produto, no desktop)
+  const barra = $(".onb-barra-dentro");
+  const medirNav = () =>
+    root.style.setProperty(
+      "--nav-h",
+      `${barra.getClientRects().length ? barra.offsetHeight : 0}px`,
+    );
+  medirNav();
+  addEventListener("resize", medirNav);
 
   // ---------- estado -> tela ----------
   function desenhar() {
     ctx.comp = s.modo === "kit" ? composicaoKit(s.a, s.b) : composicaoMontagem(s.m, s.b);
     palco.atualizar();
-    hotspots.montar();
     cotas.posicionar();
+    passos.atualizarLegenda();
     churrasqueira.renderEscolhas();
     pecas.renderConteudo();
     acessorios.render();
@@ -66,12 +69,12 @@ export function KitConfigurador(root: HTMLElement, s: Estado, { reduzido, params
   Object.assign(ctx.acoes, {
     desenhar,
     fecharPop: pecas.fecharPop,
-    fecharPilulas: destaque.fecharPilulas,
-    alterar: pecas.alterar,
     definirModo: pecas.definirModo,
     definirInstalacao: churrasqueira.definirInstalacao,
     alternarAcessorio: acessorios.alternar,
     irMontador,
+    cotas: cotas.mostrar,
+    previaMedida: cotas.previa,
   } satisfies Acoes);
 
   // ---------- eventos: cada passo diz se o alvo era dele ----------
@@ -91,12 +94,9 @@ export function KitConfigurador(root: HTMLElement, s: Estado, { reduzido, params
     if (pecas.aoClique(b) || churrasqueira.aoClique(b) || acessorios.aoClique(b)) return;
     if (resumo.aoClique(b)) return;
     if (b.hasAttribute("data-ir-montador")) irMontador();
-    else if (b.hasAttribute("data-reset")) ctx.stage?.resetView();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-    if (pecas.popAberto()) pecas.fecharPop();
-    destaque.fecharPilulas();
+    if (e.key === "Escape" && pecas.popAberto()) pecas.fecharPop();
   });
 
   if (MODO_SIMULADO)

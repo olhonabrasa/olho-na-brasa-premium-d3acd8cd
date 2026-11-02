@@ -9,7 +9,6 @@ import {
   DESTAQUES,
   MAPS,
   PAR_ARQ,
-  PILULAS,
   PROJETOS,
   REVIEWS,
   VIDEOS,
@@ -162,25 +161,21 @@ export function montador(s: Inicial) {
       <h2 id="onb-montador-t">Monte o seu.<br><span>Veja antes de comprar.</span></h2>
     </div>
     <div class="onb-builder">
-      <div class="onb-stage">
-        <canvas role="img" aria-label="Kit em 3D"></canvas>
-        <div class="onb-fallback" aria-hidden="true"></div>
-        <div class="onb-medidas-rot" aria-hidden="true">
-          <span class="onb-rot-a"><b>A</b><span>Largura da boca<i> da sua churrasqueira</i></span><em></em></span>
-          <span class="onb-rot-b"><b>B</b><span>Comprimento interno<i> da sua churrasqueira</i></span><em></em></span>
+      <div class="onb-palco">
+        <div class="onb-stage">
+          <canvas role="img" aria-label="Kit em 3D"></canvas>
+          <div class="onb-fallback" aria-hidden="true"></div>
+          <div class="onb-cotas" aria-hidden="true" hidden>
+            <svg></svg>
+            <span class="onb-cota" data-cota="a"><b>A</b><em></em></span>
+            <span class="onb-cota" data-cota="b"><b>B</b><em></em></span>
+          </div>
+          <div class="onb-pop" role="dialog" aria-label="Peça escolhida" hidden></div>
+          <div class="onb-carregando" aria-hidden="true"><i></i></div>
+          <span class="onb-palco-dica" hidden>Arraste para girar · toque nas peças</span>
+          <code class="onb-fps"></code>
         </div>
-        <div class="onb-hotspots"></div>
-        <div class="onb-pop" role="dialog" aria-label="Peça escolhida" hidden></div>
-        <div class="onb-carregando" aria-hidden="true"><i></i></div>
-        <div class="onb-pilulas" role="group" aria-label="Conheça cada parte">
-          ${PILULAS.map((p) => `<button type="button" class="onb-pilula" data-pilula="${p.id}" aria-expanded="false"><span class="onb-pilula-mais" aria-hidden="true"></span><strong>${p.nome}</strong><span class="onb-pilula-txt">${p.texto}</span></button>`).join("")}
-        </div>
-        <span class="onb-etiqueta-palco"></span>
-        <div class="onb-barra">
-          <span class="onb-dica">Arraste para girar · toque nas peças</span>
-          <button type="button" data-reset>Ver de frente</button>
-        </div>
-        <code class="onb-fps"></code>
+        <p class="onb-palco-legenda" aria-live="polite"></p>
       </div>
 
       <div class="onb-painel">
