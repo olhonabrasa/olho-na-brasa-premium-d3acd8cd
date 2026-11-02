@@ -39,6 +39,10 @@ import {
 export type StageOptions = {
   mobile: boolean;
   reducedMotion: boolean;
+  /** palco largo sem a coluna de pílulas (o topo): o kit fica centrado, sem puxar para a direita */
+  semDeslocamento?: boolean;
+  /** fator da distância da câmera no enquadramento (0,8 chega mais perto); padrão 1 */
+  aproximacao?: number;
   /** pasta com os .hdr (precisa liberar CORS para a loja) */
   assetBase: string;
   onProgress?: (p: number) => void;
@@ -71,6 +75,13 @@ export type BuilderStage = {
   focar: (parte: string | null) => void;
   /** posição na tela (px, relativa ao canvas) de um ponto do kit em metros */
   project: (p: [number, number, number]) => { x: number; y: number; atras: boolean };
+  /**
+   * Monta o kit de novo peça a peça: cada uma entra deslizando com fade (ENTRADA_MS), na ordem
+   * dos prefixos dados, escalonadas. Devolve a duração total em ms (0 com "reduzir movimento").
+   */
+  montar: (ordem?: string[], o?: { escalonarMs?: number; inicioMs?: number }) => number;
+  /** câmera poucos graus para a vista 3/4, t de 0 (de frente) a 1; ignorado depois de arrastar */
+  orbitar: (t: number) => void;
   setActive: (on: boolean) => void;
   resetView: () => void;
   stats: () => { fps: number; calls: number; triangles: number };
@@ -85,6 +96,9 @@ const ENTRADA_ACC_MS = 320;
 /** foco de leitura (passo 3): opacidade das outras peças e tempo da fusão */
 const ESMAECIDO = 0.35;
 const FOCO_MS = 150;
+/** giro máximo da câmera com a rolagem do topo (rad) e quanto ela sobe junto */
+const ORBITA_RAD = 0.3;
+const ORBITA_SOBE = 0.08;
 
 export function createBuilderStage(
   host: HTMLElement,
@@ -194,6 +208,8 @@ export function createBuilderStage(
   let disposed = false;
   let framedOnce = false;
   let raioAntes = 0;
+  /** posição da câmera no enquadramento, de onde orbitar() parte */
+  const basePos = new THREE.Vector3();
   const entradas: {
     obj: THREE.Object3D;
     de: THREE.Vector3;
@@ -299,7 +315,8 @@ export function createBuilderStage(
     // com a churrasqueira em volta, a câmera recua um pouco para mostrar o contexto
     const dist =
       (sphere.radius / (Math.tan((camera.fov * Math.PI) / 360) * Math.min(1, camera.aspect))) *
-      (ambiente?.children.length ? 0.98 : 1.05);
+      (ambiente?.children.length ? 0.98 : 1.05) *
+      (opts.aproximacao ?? 1);
     controls.minDistance = dist * 0.45;
     controls.maxDistance = dist * 2.2;
     // só reenquadra quando o tamanho muda de verdade (trocar suporte), não a cada grelha
@@ -314,6 +331,7 @@ export function createBuilderStage(
       ).normalize();
       camera.position.copy(sphere.center).add(dir.multiplyScalar(dist));
     }
+    basePos.copy(camera.position);
     camera.near = Math.max(dist / 100, 0.005);
     camera.far = dist * 20;
     camera.updateProjectionMatrix();
@@ -411,7 +429,7 @@ export function createBuilderStage(
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // palco largo: o kit vai um pouco para a direita e deixa a coluna de pílulas livre
-    if (w >= 640) camera.setViewOffset(w, h, -w * 0.1, 0, w, h);
+    if (w >= 640 && !opts.semDeslocamento) camera.setViewOffset(w, h, -w * 0.1, 0, w, h);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     dirty = true;
@@ -443,18 +461,25 @@ export function createBuilderStage(
       const agora = performance.now();
       for (let i = entradas.length - 1; i >= 0; i--) {
         const e = entradas[i];
-        const t = Math.min((agora - e.t0) / e.ms, 1);
+        const t = Math.min(Math.max((agora - e.t0) / e.ms, 0), 1);
         e.obj.position.lerpVectors(e.de, e.ate, ease(t));
         e.fade?.forEach((m) => (m.opacity = ease(t)));
         if (t >= 1) {
           entradas.splice(i, 1);
           if (e.fade) {
-            aplicarMateriais(fantasmaAtual); // volta aos materiais de verdade
+            // só esta peça volta ao material de verdade: as outras podem estar entrando ainda
+            e.obj.traverse((o) => {
+              if (!(o instanceof THREE.Mesh)) return;
+              o.material = o.userData.base as THREE.Material;
+              o.castShadow = !e.obj.userData.fantasma;
+            });
             e.fade.forEach((m) => m.dispose());
+            if (!entradas.length) aplicarMateriais(fantasmaAtual);
           }
-          renderer.shadowMap.needsUpdate = true;
         }
       }
+      // a sombra acompanha o que está entrando
+      renderer.shadowMap.needsUpdate = true;
       dirty = true;
     }
     // foco de leitura: as outras peças descem para 0,35 (ou voltam) em FOCO_MS
@@ -633,6 +658,66 @@ export function createBuilderStage(
         y: ((1 - v.y) / 2) * host.clientHeight,
         atras: v.z > 1,
       };
+    },
+    montar(ordem = [], o = {}) {
+      if (!kit || opts.reducedMotion) return 0;
+      const escalonar = o.escalonarMs ?? 140;
+      const inicio = performance.now() + (o.inicioMs ?? 0);
+      // o que ainda estava entrando chega ao lugar antes de recomeçar
+      entradas.splice(0).forEach((e) => {
+        e.obj.position.copy(e.ate);
+        e.fade?.forEach((m) => m.dispose());
+      });
+      aplicarMateriais(fantasmaAtual);
+      const indice = (nome: string) => {
+        const i = ordem.findIndex((p) => nome === p || nome.startsWith(p));
+        return i < 0 ? ordem.length : i;
+      };
+      const pecas = kit.children.slice().sort((a, b) => indice(a.name) - indice(b.name));
+      pecas.forEach((p, i) => {
+        const acessorio = p.name.startsWith("acc_");
+        const ate = p.position.clone();
+        const de = ate
+          .clone()
+          .add(
+            acessorio
+              ? new THREE.Vector3(0, 0.06, 0)
+              : p.name === "suporte"
+                ? new THREE.Vector3(0, 0.25, 0)
+                : new THREE.Vector3(0, 0.04, 0.3),
+          );
+        p.position.copy(de);
+        const fade: THREE.Material[] = [];
+        p.traverse((m) => {
+          if (!(m instanceof THREE.Mesh)) return;
+          const mat = (m.userData.base as THREE.Material).clone();
+          mat.transparent = true;
+          mat.opacity = 0;
+          m.material = mat;
+          m.castShadow = false; // sem sombra de peça que ainda não chegou
+          fade.push(mat);
+        });
+        entradas.push({
+          obj: p,
+          de,
+          ate,
+          t0: inicio + i * escalonar,
+          ms: acessorio ? ENTRADA_ACC_MS : ENTRADA_MS,
+          fade,
+        });
+      });
+      dirty = true;
+      return (o.inicioMs ?? 0) + (pecas.length ? (pecas.length - 1) * escalonar + ENTRADA_MS : 0);
+    },
+    orbitar(t) {
+      if (interacted || !framedOnce || opts.reducedMotion) return;
+      const k = Math.min(Math.max(t, 0), 1);
+      const desloc = basePos.clone().sub(controls.target);
+      desloc.applyAxisAngle(new THREE.Vector3(0, 1, 0), -ORBITA_RAD * k);
+      desloc.y += desloc.length() * ORBITA_SOBE * k;
+      camera.position.copy(controls.target).add(desloc);
+      controls.update();
+      dirty = true;
     },
     setActive(on) {
       if (on === active || disposed) return;

@@ -20,64 +20,6 @@ export function abrirWhats(texto?: string) {
 
 // ---------- topo: o vídeo do kit (toca uma vez e para no quadro de descanso) ----------
 
-/**
- * O pôster (<picture>, LCP) fica por baixo; o vídeo só começa a baixar depois que a página carregou
- * (preload="none" até lá) e só aparece por cima quando o primeiro quadro estiver pronto.
- * Sem loop, sem controles, sem áudio. Menos movimento, economia de dados ou página já rolada:
- * fica o pôster com o botão para assistir.
- */
-export function filmeTopo(root: HTMLElement, reduzido: boolean) {
-  const hero = root.querySelector<HTMLElement>(".onb-hero")!;
-  const video = hero.querySelector<HTMLVideoElement>(".onb-hero-video")!;
-  const replay = hero.querySelector<HTMLButtonElement>(".onb-hero-replay")!;
-  const conexao = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-  let carregado = false;
-
-  const mostrarBotao = (rotulo: string) => {
-    replay.innerHTML = rotulo;
-    replay.hidden = false;
-  };
-  const carregar = () => {
-    if (carregado) return;
-    carregado = true;
-    video.preload = "auto";
-    video.load();
-  };
-  const tocar = () => {
-    replay.hidden = true;
-    if (!carregado) {
-      video.autoplay = true;
-      video.addEventListener("canplay", () => video.play().catch(falhou), { once: true });
-      carregar();
-      return;
-    }
-    video.currentTime = 0;
-    video.play().catch(falhou);
-  };
-  const falhou = () => mostrarBotao('<span aria-hidden="true">▶</span> Ver a montagem');
-
-  video.addEventListener("playing", () => hero.classList.add("video-ativo"));
-  video.addEventListener("ended", () =>
-    mostrarBotao('<span aria-hidden="true">↻</span> Ver a montagem de novo'),
-  );
-  video.addEventListener("error", falhou);
-  replay.addEventListener("click", tocar);
-
-  // fora da tela, pausa; ao voltar, continua de onde parou
-  new IntersectionObserver(([e]) => {
-    if (!carregado || video.ended || !replay.hidden) return;
-    if (e.isIntersecting) video.play().catch(() => {});
-    else video.pause();
-  }).observe(hero);
-
-  if (reduzido || conexao?.saveData || scrollY > 200) return falhou();
-  // o vídeo não disputa banda com o pôster e o CSS: começa depois do load da página
-  if (document.readyState === "complete") tocar();
-  else addEventListener("load", tocar, { once: true });
-}
-
-// ---------- destaques: um vídeo por cartão, passa sozinho quando o vídeo acaba ----------
-
 export function carrosselDestaques(root: HTMLElement, reduzido: boolean) {
   const sec = root.querySelector<HTMLElement>(".onb-destaques")!;
   const trilho = sec.querySelector<HTMLElement>(".onb-dest-trilho")!;

@@ -58,12 +58,8 @@ export function topo() {
         <source srcset="${IMG}hero-poster-desktop.webp" type="image/webp">
         <img class="onb-hero-poster" src="${IMG}hero-poster-desktop.jpg" alt="Kit Premium Olho na Brasa em inox no nicho de mármore, com picanha na grelha, espetos e grelha de descanso" width="1280" height="720" fetchpriority="high" decoding="async">
       </picture>
-      <video class="onb-hero-video" muted playsinline preload="none" aria-hidden="true">
-        <source media="(max-width:767px)" src="${IMG}hero-mobile-4x5.webm" type="video/webm">
-        <source media="(max-width:767px)" src="${IMG}hero-mobile-4x5.mp4" type="video/mp4">
-        <source src="${IMG}hero-desktop.webm" type="video/webm">
-        <source src="${IMG}hero-desktop.mp4" type="video/mp4">
-      </video>
+      <canvas class="onb-hero-canvas" aria-hidden="true"></canvas>
+      <div class="onb-carregando" aria-hidden="true"><i></i></div>
       <button type="button" class="onb-hero-replay" hidden><span aria-hidden="true">↻</span> Ver a montagem de novo</button>
     </div>
   </section>`;

@@ -7,6 +7,7 @@ Leia também o `AGENTS.md` (repositório ligado ao Lovable: nunca reescrever his
 - Código-fonte da LP: `wbuy-lp/src/` (TypeScript puro + three.js, sem framework), no `main`,
   junto do build. `main.ts` só liga as partes; as dobras estão em `dobras.ts` e `interacoes.ts`;
   o montador em `configurador/` (um arquivo por passo, o 3D e as cotas em `configurador/palco/`);
+  o 3D do topo em `hero3d.ts` (mesmo palco, carregado depois do `load`; o pôster é o primeiro quadro);
   as duas cenas ("Kit Premium" e "Montar o meu": passos, instalações, churrasqueiras, modo de
   preço) em `data/cenas.ts`; movimento em `motion/`; cores, fontes, medidas e curvas só em
   `styles/tokens.css`.
