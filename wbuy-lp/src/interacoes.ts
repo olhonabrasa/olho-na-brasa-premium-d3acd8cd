@@ -309,24 +309,38 @@ export function entradasSuaves(root: HTMLElement, reduzido: boolean) {
   root.classList.add("onb-anima");
 }
 
-/** Barra "Kit Premium" (desktop) e dock de preço (celular): aparecem depois do topo, somem no resumo. */
+/**
+ * Barra "Kit Premium" (desktop) e dock de preço (celular): aparecem depois do topo, somem no resumo.
+ * O chat flutuante da loja (#lb-widget-container) some enquanto o montador está na tela e, fora dele,
+ * sobe a altura do dock enquanto o dock está aberto: nada pode cobrir o botão Comprar.
+ */
 export function barrasFixas(root: HTMLElement) {
   const resumo = root.querySelector(".onb-resumo")!;
-  const dock = root.querySelector(".onb-dock")!;
+  const dock = root.querySelector<HTMLElement>(".onb-dock")!;
   const barra = root.querySelector(".onb-barra-produto")!;
   const hero = root.querySelector(".onb-hero")!;
+  const montador = root.querySelector("#onb-montador")!;
   let resumoVisivel = false;
   let heroVisivel = true;
+  let montadorVisivel = false;
   const atualizar = () => {
-    dock.classList.toggle("on", !resumoVisivel && !heroVisivel);
+    const dockOn = !resumoVisivel && !heroVisivel;
+    dock.classList.toggle("on", dockOn);
     barra.classList.toggle("on", !heroVisivel);
+    // o dock só existe no celular (display none no desktop): sem retângulo, não está na página
+    const dockNaTela = dockOn && dock.getClientRects().length > 0;
+    const html = document.documentElement;
+    html.classList.toggle("onb-sem-chat", montadorVisivel);
+    html.classList.toggle("onb-dock-aberto", dockNaTela && !montadorVisivel);
+    if (dockNaTela) html.style.setProperty("--onb-dock-h", `${dock.offsetHeight}px`);
   };
-  new IntersectionObserver(([e]) => {
-    resumoVisivel = e.isIntersecting;
-    atualizar();
-  }).observe(resumo);
-  new IntersectionObserver(([e]) => {
-    heroVisivel = e.isIntersecting;
-    atualizar();
-  }).observe(hero);
+  const observar = (el: Element, guardar: (visivel: boolean) => void) =>
+    new IntersectionObserver(([e]) => {
+      guardar(e.isIntersecting);
+      atualizar();
+    }).observe(el);
+  observar(resumo, (v) => (resumoVisivel = v));
+  observar(hero, (v) => (heroVisivel = v));
+  observar(montador, (v) => (montadorVisivel = v));
+  addEventListener("resize", atualizar);
 }
