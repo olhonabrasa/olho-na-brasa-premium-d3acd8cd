@@ -1,0 +1,72 @@
+/* Tokens da LP "Monte seu kit": toda cor, fonte, medida e curva mora aqui.
+   Nas seções, nunca um hex solto: sempre var(--...).
+   Os tokens ficam em :root (com prefixo onb-, para não brigar com o tema da Wbuy), porque
+   algumas regras precisam deles fora de #onb-kit-lp (fundo do body, chat flutuante da loja). */
+:root {
+  /* ---------- paleta do configurador (itens 3 a 6 da série) ---------- */
+  --carvao: #14100d;
+  --brasa: #c4501c;
+  --brasa-clara: #e8843c;
+  --inox: #d7dbdd;
+  --inox-2: #9ba3a7;
+  --osso: #f5f2ed;
+  --fio: color-mix(in oklch, var(--inox) 24%, transparent);
+  --fonte: "Inter", system-ui, sans-serif;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-rapido: 150ms;
+  --t-base: 180ms;
+  --t-entrada: 320ms;
+
+  /* ---------- paleta das dobras atuais ---------- */
+  /* fundos escuros */
+  --onb-noite: #0b0b0c;
+  --onb-noite-2: #151517;
+  --onb-noite-3: #1d1d20;
+  --onb-noite-hero: #060504;
+  --onb-noite-midia: #1a1918;
+  --onb-noite-rodape: #060606;
+  --onb-preto: #000;
+  /* o palco do 3D: luz no alto, sombra embaixo */
+  --onb-palco-luz: #2a2622;
+  --onb-palco-meio: #141210;
+  --onb-palco-fundo: #0a0908;
+  --onb-palco-brasa: #2a1306;
+  /* fundos claros e texto */
+  --onb-papel: #f5f5f7;
+  --onb-branco: #fff;
+  --onb-card: var(--onb-branco);
+  --onb-texto: #1d1d1f;
+  --onb-tinta: #111;
+  --onb-tinta-2: #222;
+  --onb-suave: #6e6e73;
+  --onb-cinza-escuro: #555;
+  --onb-cinza-medio: #888;
+  --onb-cinza-quente: #8d877e;
+  --onb-claro-txt: #f5f5f7;
+  --onb-claro-suave: #a1a1a6;
+  /* linhas */
+  --onb-linha: #d2d2d7;
+  --onb-linha-clara: #eee;
+  --onb-linha-escura: #2e2e32;
+  --onb-trilho: #3a3a40;
+  /* marca e destaques */
+  --onb-laranja: #e8590c;
+  --onb-laranja-forte: #c94a06;
+  --onb-laranja-claro: #ffb98a;
+  --onb-brasa: #ff7a2f;
+  --onb-brasa-topo: #ffd3b0;
+  --onb-brasa-base: #8a2a00;
+  --onb-estrela: #f5a623;
+  --onb-amarelo: #ffb800;
+  --onb-ok: #34c26a;
+  --onb-erro: #ff6b5b;
+  --onb-aviso-fundo: #fff3cd;
+  --onb-aviso-texto: #6b4e00;
+
+  /* ---------- medidas, fonte e curva das dobras atuais ---------- */
+  --onb-raio: 24px;
+  --onb-topo: 0px; /* sem o topo da loja, nada fixo acima da LP */
+  --onb-barra-h: 52px;
+  --onb-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --onb-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
