@@ -7,6 +7,10 @@ export default defineConfig({
   testDir: "./tests",
   outputDir: "../.playwright/saida",
   snapshotPathTemplate: "{testDir}/capturas/{projectName}/{arg}{ext}",
+  // As capturas de referência são do Chrome no Windows. No Linux do CI o antialiasing de fonte
+  // muda 1 a 5 % dos pixels em toda captura, então lá as comparações ficam desligadas e só os
+  // testes funcionais, a auditoria e o Lighthouse decidem. Comparar pixels: `npm run test:wbuy` local.
+  ignoreSnapshots: !!process.env.CI,
   fullyParallel: false,
   workers: 1,
   retries: 0,

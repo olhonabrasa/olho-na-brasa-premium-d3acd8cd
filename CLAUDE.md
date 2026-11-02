@@ -18,7 +18,10 @@ Leia também o `AGENTS.md` (repositório ligado ao Lovable: nunca reescrever his
   Comprar livre, cartões entre palco e barra, contraste com axe-core, CLS e a cota acompanhando a
   régua, também sem "reduzir movimento" nos projetos `*-movimento`). Capturas em
   `wbuy-lp/tests/capturas/`; só se atualizam (`--update-snapshots`) quando a mudança visual é
-  intencional. `LP_AO_VIVO=1` liga `ao-vivo.spec.ts` contra a loja real.
+  intencional, e só são comparadas na máquina de referência (Chrome no Windows): no CI
+  (`process.env.CI`) o antialiasing de fonte do Linux muda 1 a 5 % dos pixels, então lá as
+  comparações ficam desligadas (`ignoreSnapshots`) e valem os testes funcionais, a auditoria e o
+  Lighthouse. `LP_AO_VIVO=1` liga `ao-vivo.spec.ts` contra a loja real.
 - Orçamento: `npm run orcamento:wbuy` (bundle ≤ 350 KB gzip, textura ≤ 600 KB) e, depois do
   build, `npm run lh:wbuy` (Lighthouse CI no build de verdade servido com gzip por
   `wbuy-lp/scripts/servir-build.mjs`: CLS < 0,1, scripts ≤ 350 KB). O workflow
