@@ -300,7 +300,6 @@ export function setasCarrossel(root: HTMLElement) {
  * sobe a altura do dock enquanto o dock está aberto: nada pode cobrir o botão Comprar.
  */
 export function barrasFixas(root: HTMLElement) {
-  const resumo = root.querySelector(".onb-resumo")!;
   const dock = root.querySelector<HTMLElement>(".onb-dock")!;
   const barra = root.querySelector(".onb-barra-produto")!;
   const hero = root.querySelector(".onb-hero")!;
@@ -324,7 +323,22 @@ export function barrasFixas(root: HTMLElement) {
       guardar(e.isIntersecting);
       atualizar();
     }).observe(el);
-  observar(resumo, (v) => (resumoVisivel = v));
+  // o cartão de resumo é remontado quando a pessoa troca de cena: observa o atual, sempre
+  let ioResumo: IntersectionObserver | null = null;
+  const observarResumo = () => {
+    ioResumo?.disconnect();
+    const resumo = root.querySelector(".onb-resumo");
+    if (!resumo) return;
+    ioResumo = new IntersectionObserver(([e]) => {
+      resumoVisivel = e.isIntersecting;
+      atualizar();
+    });
+    ioResumo.observe(resumo);
+  };
+  observarResumo();
+  new MutationObserver(observarResumo).observe(root.querySelector(".onb-painel")!, {
+    childList: true,
+  });
   observar(hero, (v) => (heroVisivel = v));
   observar(montador, (v) => (montadorVisivel = v));
   addEventListener("resize", atualizar);

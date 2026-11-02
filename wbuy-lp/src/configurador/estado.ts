@@ -1,7 +1,8 @@
 // Estado do configurador e o contexto que todos os passos compartilham.
 import type { Composicao } from "@/lib/kitComposition";
 import { montagemSugerida, type Grupo, type Montagem } from "../builder";
-import { AMBIENTES, type AccId } from "../conteudo";
+import type { AccId } from "../conteudo";
+import type { Cena } from "../data/cenas";
 import type { BuilderStage } from "./palco/builderStage";
 import type { Acessorios, Ambiente, Instalacao } from "./palco/cena3d";
 
@@ -10,7 +11,7 @@ export type Estado = {
   a: number;
   b: number;
   modo: Modo;
-  /** montagem peça por peça sugerida para a medida (hoje só alimenta o 3D fora da faixa do kit) */
+  /** montagem peça por peça (no premium só alimenta o 3D fora da faixa do kit) */
   m: Montagem;
   foco: Grupo | null;
   inst: Instalacao;
@@ -20,23 +21,39 @@ export type Estado = {
   medidas: boolean;
 };
 
-/** Estado de partida do Kit Premium: medidas e churrasqueira vêm da URL (deep link ?a=70&b=60&amb=fechada). */
-export function estadoInicial(params: URLSearchParams): Estado {
-  const a0 = Number(params.get("a")) || 70;
-  const b0 = Number(params.get("b")) || 60;
+/**
+ * Estado de partida de uma cena. Medidas, instalação e churrasqueira vêm da URL
+ * (?a=70&b=60&inst=cooktop&amb=fechada); ao trocar de cena, A e B são herdados e o resto reinicia.
+ */
+export function estadoInicial(
+  params: URLSearchParams,
+  cena: Cena,
+  herdar?: { a: number; b: number },
+): Estado {
+  const a0 = herdar?.a ?? (Number(params.get("a")) || 70);
+  const b0 = herdar?.b ?? (Number(params.get("b")) || 60);
+  const instParam = params.get("inst") as Instalacao | null;
+  const inst = instParam && cena.instalacoes.includes(instParam) ? instParam : cena.instalacoes[0];
   const ambParam = params.get("amb") as Ambiente | null;
+  const m = montagemSugerida(a0, b0);
+  if (cena.soSuporte) {
+    m.grelhas.forEach((g) => (g.qtd = 0));
+    m.descanso.qtd = 0;
+    m.espetos.forEach((e) => (e.qtd = 0));
+  }
   return {
     a: a0,
     b: b0,
-    modo: "kit",
-    m: montagemSugerida(a0, b0),
+    modo: cena.modo,
+    m,
     foco: null,
-    inst: "suspenso",
-    // bancada é cenário do cooktop, que só existe no modo "livre" (item 6)
+    inst,
     amb:
-      ambParam && ambParam !== "bancada" && AMBIENTES.some((x) => x.id === ambParam)
+      ambParam && cena.ambientes.includes(ambParam)
         ? ambParam
-        : "fechada",
+        : inst === "cooktop"
+          ? "bancada"
+          : "fechada",
     acc: { giratorio: false, cesto: false, bandeja: false, defumador: false },
     medidas: false,
   };
@@ -63,6 +80,7 @@ export type Ctx = {
   root: HTMLElement;
   $: <T extends Element = HTMLElement>(sel: string) => T;
   s: Estado;
+  cena: Cena;
   params: URLSearchParams;
   reduzido: boolean;
   /** 3D (null até carregar) e a composição desenhada por último */

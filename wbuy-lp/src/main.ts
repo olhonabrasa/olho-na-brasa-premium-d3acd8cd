@@ -4,7 +4,7 @@
 // Este arquivo só liga as partes: as dobras estão em dobras.ts e interacoes.ts,
 // o montador em configurador/ (um arquivo por passo, o palco em configurador/palco/).
 import css from "./styles.css?inline";
-import { estadoInicial, KitConfigurador } from "./configurador";
+import { cenaDaUrl, estadoInicial, KitConfigurador } from "./configurador";
 import * as D from "./dobras";
 import {
   antesDepois,
@@ -21,14 +21,15 @@ import { IMG } from "./util";
 
 function iniciar(root: HTMLElement) {
   const params = new URLSearchParams(location.search);
-  const s = estadoInicial(params);
+  const cena = cenaDaUrl(params);
+  const s = estadoInicial(params, cena);
   const reduzido = reduzMovimento();
 
   root.innerHTML = [
     D.topo(),
     D.destaques(),
     D.antesDepois(),
-    D.montador(s),
+    D.montador(s, cena),
     D.acabamento(),
     D.garantia(),
     D.acessorios(),
@@ -53,7 +54,7 @@ function iniciar(root: HTMLElement) {
   barrasFixas(root);
 
   // ---------- montador ----------
-  KitConfigurador(root, s, { reduzido, params });
+  KitConfigurador(root, s, cena, { reduzido, params });
 }
 
 const raiz = document.getElementById("onb-kit-lp");

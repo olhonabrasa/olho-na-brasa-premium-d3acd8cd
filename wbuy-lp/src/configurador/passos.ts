@@ -36,9 +36,8 @@ export function montarPassos(ctx: Ctx) {
   rolaveis.forEach((c) => observador.observe(c));
 
   // com o montador fora da tela, nenhum passo está ativo (cotas somem, 3D inteiro a 1)
-  new IntersectionObserver(([e]) => !e.isIntersecting && desativar()).observe(
-    ctx.$("#onb-montador"),
-  );
+  const observadorMontador = new IntersectionObserver(([e]) => !e.isIntersecting && desativar());
+  observadorMontador.observe(ctx.$("#onb-montador"));
 
   function desativar() {
     if (!ativo) return;
@@ -77,5 +76,11 @@ export function montarPassos(ctx: Ctx) {
     legenda.textContent = `${s.a} × ${s.b} cm · ${amb}${passo ? ` · passo ${passo} de ${total}` : ""}`;
   }
 
-  return { atualizarLegenda };
+  /** Ao trocar de cena o painel é remontado: solta os observadores deste. */
+  function destruir() {
+    observador.disconnect();
+    observadorMontador.disconnect();
+  }
+
+  return { atualizarLegenda, destruir };
 }

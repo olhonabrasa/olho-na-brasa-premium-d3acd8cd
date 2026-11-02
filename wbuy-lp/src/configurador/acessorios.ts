@@ -39,9 +39,9 @@ export function montarAcessorios(ctx: Ctx) {
         ? "Combo no seu kit ✓"
         : "Adicionar o combo";
     });
-    const nota = $(".onb-combo-nota");
-    nota.hidden = !combo;
-    if (combo) atualizarNotaCombo();
+    const nota = root.querySelector<HTMLElement>(".onb-combo-nota");
+    if (nota) nota.hidden = !combo;
+    if (nota && combo) atualizarNotaCombo();
   }
 
   async function atualizarNotaCombo() {
@@ -52,7 +52,9 @@ export function montarAcessorios(ctx: Ctx) {
     ]);
     if (!g || !c || !k) return;
     const economia = g.valor + c.valor - k.valor;
-    $(".onb-combo-nota").innerHTML =
+    const nota = root.querySelector(".onb-combo-nota");
+    if (!nota) return;
+    nota.innerHTML =
       economia > 0
         ? `Giratório + cesto entram como combo: <b>${brl(k.valor)}</b>, ${brl(economia)} a menos que separados.`
         : `Giratório + cesto entram como combo: <b>${brl(k.valor)}</b>.`;

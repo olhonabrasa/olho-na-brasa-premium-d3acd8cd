@@ -80,6 +80,51 @@ test("montador: acessório adicionado", async ({ page }) => {
   await conferirMontador(page, "montador-acessorio");
 });
 
+test("montador: modo livre (?kit=livre)", async ({ page }) => {
+  await abrir(page, "/?kit=livre");
+  await conferirMontador(page, "montador-livre");
+});
+
+// ---------- item 6: controle segmentado, ?kit= e modo "Montar o meu" ----------
+
+test("modo livre: começa só com o suporte e cada peça soma ao total", async ({ page }) => {
+  await abrir(page, "/?kit=livre");
+  await expect(page.locator('[data-kit="livre"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#onb-passo-instalacao .onb-passo-t")).toContainText(
+    "Suspenso ou cooktop",
+  );
+  await expect(page.locator('[data-amb="bancada"]')).toHaveCount(1);
+  // só o suporte no resumo
+  const linhas = page.locator(".onb-resumo .onb-resumo-linhas li");
+  await expect(linhas).toHaveCount(1);
+  await expect(linhas.first()).toContainText("Suporte");
+  const totalAntes = await page.locator(".onb-resumo .onb-total .v").textContent();
+  // adiciona uma grelha uruguaia: entra no resumo e o total sobe
+  const mais = page.locator('.onb-peca[data-peca-linha="uruguaia"] [data-qtd][data-d="1"]');
+  await mais.scrollIntoViewIfNeeded();
+  await mais.click();
+  await expect(linhas).toHaveCount(2);
+  await expect(page.locator(".onb-resumo .onb-total .v")).not.toHaveText(totalAntes!);
+  // cooktop acrescenta o encaixe ao resumo
+  await page.locator('[data-inst="cooktop"]').click();
+  await expect(page.locator(".onb-resumo .onb-resumo-linhas")).toContainText("Encaixe cooktop");
+});
+
+test("trocar de modo mantém A e B e troca a URL", async ({ page }) => {
+  await abrir(page, "/?a=80&b=70");
+  await page.locator('[data-kit="livre"]').click();
+  await expect(page).toHaveURL(/kit=livre/);
+  await expect(page.locator('input[name="a"]')).toHaveValue("80");
+  await expect(page.locator('input[name="b"]')).toHaveValue("70");
+  await expect(page.locator("#onb-passo-instalacao")).toHaveCount(1);
+  await expect(page.locator("#onb-passo-kit")).toHaveCount(0);
+  await expect(page.locator(".onb-palco-legenda")).toContainText("80 × 70 cm");
+  await page.locator('[data-kit="premium"]').click();
+  await expect(page).toHaveURL(/kit=premium/);
+  await expect(page.locator("#onb-passo-kit")).toHaveCount(1);
+  await expect(page.locator("#onb-conteudo li")).toHaveCount(6);
+});
+
 test("console sem erros", async ({ page }) => {
   const erros: string[] = [];
   page.on("pageerror", (e) => erros.push(e.message));
