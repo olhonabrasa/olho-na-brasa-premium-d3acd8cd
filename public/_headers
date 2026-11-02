@@ -13,7 +13,7 @@
   Cache-Control: no-store
   Referrer-Policy: no-referrer
 
-# LP de campanha da Wbuy (olhonabrasa.com.br/m/...) carrega daqui o montador e os HDRIs
+# LP "Monte seu kit" na Wbuy (olhonabrasa.com.br/m/...) carrega daqui o montador e os HDRIs
 /wbuy-lp/*
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
@@ -25,3 +25,4 @@
 /3d/*
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
+  Cache-Control: public, max-age=86400
