@@ -272,6 +272,11 @@ html.onb-dock-aberto #lb-widget-container {
 }
 
 /* ---------- barra do produto (aparece depois do topo) ---------- */
+/* a <style> colada na página da Wbuy ainda define --onb-topo pela altura do cabeçalho da loja
+   (var(--topo_altura), 90px); com a LP ativa esse cabeçalho some, então nada fica acima da barra */
+html.onb-lp-ativa #onb-kit-lp {
+  --onb-topo: 0px;
+}
 #onb-kit-lp .onb-barra-produto {
   position: fixed;
   top: var(--onb-topo);

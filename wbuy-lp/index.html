@@ -14,6 +14,21 @@
         margin: 0;
         background: #fff;
       }
+      /* o tema da Wbuy expõe a altura do cabeçalho; a <style> colada na página de conteúdo
+         (wbuy-lp/wbuy/pagina-conteudo.html) usa isso em --onb-topo. Igual aqui, para o teste ver. */
+      :root {
+        --topo_altura: 90px;
+        --topo_altura_mobile: 60px;
+      }
+      #onb-kit-lp {
+        --onb-topo: var(--topo_altura, 0px);
+        min-height: 80vh;
+      }
+      @media (max-width: 800px) {
+        #onb-kit-lp {
+          --onb-topo: var(--topo_altura_mobile, 0px);
+        }
+      }
       .fake-topo,
       .fake-rodape {
         background: #111;
