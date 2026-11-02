@@ -14,8 +14,10 @@ export type PassoId =
 
 export type Cena = {
   id: CenaId;
-  /** no controle segmentado */
+  /** nos cartões de escolha do modo */
   rotulo: string;
+  /** uma linha abaixo do rótulo */
+  descricao: string;
   eyebrow: string;
   titulo: string;
   /** "kit": o Kit Premium da faixa, um produto; "pecas": cada peça é um produto */
@@ -25,12 +27,15 @@ export type Cena = {
   ambientes: Ambiente[];
   /** o 3D começa só com o suporte na parede */
   soSuporte: boolean;
+  /** medidas aceitas (caixa e régua), em cm: [mínimo, máximo] */
+  limites: { a: [number, number]; b: [number, number] };
 };
 
 export const CENAS: Record<CenaId, Cena> = {
   premium: {
     id: "premium",
     rotulo: "Kit Premium",
+    descricao: "Completo e sob medida: suporte, grelhas e espetos.",
     eyebrow: "Kit Premium",
     titulo: "Na medida da sua churrasqueira.",
     modo: "kit",
@@ -44,10 +49,13 @@ export const CENAS: Record<CenaId, Cena> = {
     instalacoes: ["suspenso"],
     ambientes: ["fechada", "lateral", "gourmet", "estudio"],
     soSuporte: false,
+    // as faixas do kit (catalog.ts): fora disso não há produto, então a régua nem deixa ir
+    limites: { a: [50, 99], b: [40, 74] },
   },
   livre: {
     id: "livre",
     rotulo: "Montar o meu",
+    descricao: "Peça por peça, só o que você quer.",
     eyebrow: "Montar o meu",
     titulo: "Peça por peça, do seu jeito.",
     modo: "pecas",
@@ -61,6 +69,8 @@ export const CENAS: Record<CenaId, Cena> = {
     instalacoes: ["suspenso", "cooktop"],
     ambientes: ["fechada", "lateral", "bancada", "gourmet", "estudio"],
     soSuporte: true,
+    // o que a fábrica faz peça a peça (A_MIN..A_MAX, B_MIN..B_MAX em builder.ts)
+    limites: { a: [35, 139], b: [35, 74] },
   },
 };
 

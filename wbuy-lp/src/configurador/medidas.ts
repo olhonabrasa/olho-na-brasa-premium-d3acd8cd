@@ -1,5 +1,5 @@
 // Passo das medidas: A (largura da boca) e B (comprimento interno), caixa + régua.
-import { A_MAX, A_MIN, B_MAX, B_MIN, faixaKit, montagemSugerida } from "../builder";
+import { faixaKit, montagemSugerida } from "../builder";
 import type { Ctx } from "./estado";
 
 export function pintarRegua(r: HTMLInputElement) {
@@ -13,7 +13,7 @@ export function montarMedidas(ctx: Ctx) {
   root.querySelectorAll<HTMLInputElement>(".onb-calc-range[data-par]").forEach(pintarRegua);
 
   function ler(nome: "a" | "b", bruto: number, final: boolean) {
-    const [min, max] = nome === "a" ? [A_MIN, A_MAX] : [B_MIN, B_MAX];
+    const [min, max] = nome === "a" ? ctx.cena.limites.a : ctx.cena.limites.b;
     const inp = root.querySelector<HTMLInputElement>(`input[name="${nome}"]`)!;
     const range = root.querySelector<HTMLInputElement>(`input[name="${nome}-range"]`)!;
     const v = Math.round(bruto);

@@ -38,8 +38,9 @@
         text-align: center;
       }
       /* igual à página de conteúdo da Wbuy depois do CSS da LP: largura toda */
-      .container {
-        width: 100%;
+      /* casca do tema da Wbuy: #geral tem overflow hidden, que anularia o sticky do palco */
+      #geral {
+        overflow: hidden;
       }
       /* chat flutuante da loja: mesmos ids e medidas do tema, para o teste ver o que cobre o Comprar */
       #lb-widget-container {
@@ -74,9 +75,17 @@
   </head>
   <body>
     <div class="fake-topo">Topo da loja Wbuy (simulado)</div>
-    <div class="container">
-      <!-- igual ao que vai colado na página de conteúdo da Wbuy -->
-      <div id="onb-kit-lp"></div>
+    <!-- a mesma casca da página de conteúdo da Wbuy: #geral > .container-fluid > #informacoes -->
+    <div id="geral">
+      <div class="container-fluid">
+        <div id="informacoes">
+          <div class="central">
+            <article class="texto">
+              <div id="onb-kit-lp"></div>
+            </article>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="fake-rodape">Rodapé da loja (simulado)</div>
     <div id="lb-widget-container">

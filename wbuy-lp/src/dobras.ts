@@ -1,6 +1,5 @@
 // HTML de cada dobra da LP, na ordem da página. Nenhum link leva para fora da
 // LP: o único caminho de saída é o carrinho (comprar) ou o WhatsApp (dúvida).
-import { A_MAX, A_MIN, B_MAX, B_MIN } from "./builder";
 import type { Ambiente, Instalacao } from "./configurador/palco/cena3d";
 import {
   ACC_INFO,
@@ -56,7 +55,7 @@ export function topo() {
         <source media="(max-width:767px)" srcset="${IMG}hero-poster-mobile.jpg">
         <source srcset="${IMG}hero-poster-desktop.avif" type="image/avif">
         <source srcset="${IMG}hero-poster-desktop.webp" type="image/webp">
-        <img class="onb-hero-poster" src="${IMG}hero-poster-desktop.jpg" alt="Kit Premium Olho na Brasa em inox no nicho de mármore, com picanha na grelha, espetos e grelha de descanso" width="1280" height="720" fetchpriority="high" decoding="async">
+        <img class="onb-hero-poster" src="${IMG}hero-poster-desktop.jpg" alt="Kit Premium Olho na Brasa em 3D numa churrasqueira fechada de 70 por 60 cm: suporte suspenso, duas grelhas uruguaias, grelha de descanso e espetos" width="1280" height="720" fetchpriority="high" decoding="async">
       </picture>
       <canvas class="onb-hero-canvas" aria-hidden="true"></canvas>
       <div class="onb-carregando" aria-hidden="true"><i></i></div>
@@ -157,8 +156,8 @@ function corpoDoPasso(id: PassoId, s: Inicial, cena: Cena) {
     case "medidas":
       return `<div class="onb-medidas-grade">
             <div class="onb-campos">
-              ${medidaAB("a", "Largura da boca", A_MIN, A_MAX, s.a)}
-              ${medidaAB("b", "Comprimento interno", B_MIN, B_MAX, s.b)}
+              ${medidaAB("a", "Largura da boca", cena.limites.a[0], cena.limites.a[1], s.a)}
+              ${medidaAB("b", "Comprimento interno", cena.limites.b[0], cena.limites.b[1], s.b)}
             </div>
             <figure class="onb-onde-medir">
               ${foto("como-medir", "Churrasqueira com a largura da boca marcada como A e o comprimento interno como B", 500, 500)}
@@ -222,7 +221,7 @@ export function montador(s: Inicial, cena: Cena) {
         ${Object.values(CENAS)
           .map(
             (c) =>
-              `<button type="button" data-kit="${c.id}" aria-pressed="${c.id === cena.id}">${c.rotulo}</button>`,
+              `<button type="button" data-kit="${c.id}" aria-pressed="${c.id === cena.id}"><strong>${c.rotulo}</strong><small>${c.descricao}</small></button>`,
           )
           .join("")}
       </div>

@@ -208,3 +208,32 @@ test("topo: o pôster é o primeiro quadro e, sem WebGL, o 3D não aparece nem d
   expect(m.replayEscondido).toBe(true);
   expect(m.video, "ainda há <video> no topo").toBe(false);
 });
+
+test("Kit Premium: medidas presas às faixas do kit; deep link fora da faixa encaixa", async ({
+  page,
+}) => {
+  await abrir(page, "/?a=120&b=30");
+  const caixas = await page.evaluate(() => {
+    const ler = (n: string) => {
+      const i = document.querySelector<HTMLInputElement>(`input[name="${n}"]`)!;
+      const r = document.querySelector<HTMLInputElement>(`input[name="${n}-range"]`)!;
+      return { v: i.value, min: i.min, max: i.max, rmin: r.min, rmax: r.max };
+    };
+    return { a: ler("a"), b: ler("b") };
+  });
+  expect(caixas.a).toEqual({ v: "99", min: "50", max: "99", rmin: "50", rmax: "99" });
+  expect(caixas.b).toEqual({ v: "40", min: "40", max: "74", rmin: "40", rmax: "74" });
+  await expect(page.locator(".onb-resumo .onb-resumo-linhas")).toContainText("Kit Premium");
+  // digitar fora da faixa não entra
+  await page.locator('input[name="a"]').fill("45");
+  await page.locator('input[name="a"]').dispatchEvent("change");
+  await expect(page.locator("#onb-msg-a")).toHaveText("Entre 50 e 99 cm");
+  await expect(page.locator(".onb-palco-legenda")).toContainText("99 × 40 cm");
+  // "Montar o meu" continua aceitando as medidas da fábrica
+  await page.locator('.onb-segmento [data-kit="livre"]').click();
+  const livre = await page.evaluate(() => {
+    const i = document.querySelector<HTMLInputElement>('input[name="a"]')!;
+    return { min: i.min, max: i.max };
+  });
+  expect(livre).toEqual({ min: "35", max: "139" });
+});
