@@ -156,3 +156,27 @@ test("trocar A atualiza a cota e o resumo juntos", async ({ page }) => {
   await expect(page.locator(".onb-palco-legenda")).toContainText("84 × 60 cm");
   await expect(page.locator(".onb-resumo .onb-resumo-linhas")).toContainText("Kit Premium 80×60");
 });
+
+test("desktop: a barra do produto encosta no topo e o palco e o resumo ficam abaixo dela", async ({
+  page,
+}, info) => {
+  test.skip(!!info.project.use.isMobile, "a barra do produto só existe no desktop");
+  await abrir(page);
+  await rolarAte(page, "#onb-passo-churrasqueira");
+  const barra = page.locator(".onb-barra-produto.on .onb-barra-dentro");
+  await expect(barra).toBeVisible();
+  await page.waitForTimeout(450); // fim da entrada da barra
+  const m = await page.evaluate(() => {
+    const b = document.querySelector(".onb-barra-dentro")!.getBoundingClientRect();
+    const palco = document.querySelector(".onb-palco")!.getBoundingClientRect();
+    const resumo = document.querySelector(".onb-resumo")!.getBoundingClientRect();
+    return { barraTop: b.top, barraBottom: b.bottom, palcoTop: palco.top, resumoTop: resumo.top };
+  });
+  // a página da Wbuy define --onb-topo pela altura do cabeçalho da loja (90px), que a LP esconde
+  expect(m.barraTop, "barra fora do topo da janela").toBe(0);
+  // com "reduzir movimento" o palco e o resumo não ficam presos: rolam com a página
+  if (info.project.metadata?.movimento) {
+    expect(m.palcoTop, "palco atrás da barra").toBeGreaterThanOrEqual(m.barraBottom);
+    expect(m.resumoTop, "resumo atrás da barra").toBeGreaterThanOrEqual(m.barraBottom);
+  }
+});
