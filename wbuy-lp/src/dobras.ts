@@ -133,7 +133,7 @@ const medidaAB = (nome: "a" | "b", rotulo: string, min: number, max: number, v: 
     <div class="onb-campo">
       <label for="onb-${nome}"><b>${nome.toUpperCase()}</b> ${rotulo}</label>
       <div class="onb-calc">
-        <span class="onb-calc-num"><input id="onb-${nome}" name="${nome}" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" value="${v}" aria-describedby="onb-msg-${nome}"><em>cm</em></span>
+        <span class="onb-calc-num"><input id="onb-${nome}" name="${nome}" type="number" inputmode="numeric" autocomplete="off" min="${min}" max="${max}" step="1" value="${v}" aria-describedby="onb-msg-${nome}"><em>cm</em></span>
         <input class="onb-calc-range" type="range" name="${nome}-range" min="${min}" max="${max}" step="1" value="${v}" aria-label="${rotulo}" data-par="${nome}">
       </div>
       <p class="onb-msg" id="onb-msg-${nome}" aria-live="polite"></p>
