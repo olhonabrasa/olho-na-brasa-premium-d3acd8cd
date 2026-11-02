@@ -75,6 +75,8 @@ export function KitConfigurador(root: HTMLElement, s: Estado, { reduzido, params
     irMontador,
     cotas: cotas.mostrar,
     previaMedida: cotas.previa,
+    acenderDestaque: pecas.acenderPerto,
+    apagarDestaque: pecas.apagarLinhas,
   } satisfies Acoes);
 
   // ---------- eventos: cada passo diz se o alvo era dele ----------

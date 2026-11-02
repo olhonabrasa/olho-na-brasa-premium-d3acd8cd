@@ -150,6 +150,22 @@ test("o que vem no kit: seis linhas, 1 espeto duplo + 1 simples", async ({ page 
   await expect(page.locator('[data-amb="bancada"], [data-inst]')).toHaveCount(0);
 });
 
+test("passo 3: a linha no meio da tela acende e as outras recuam; ao sair, tudo volta", async ({
+  page,
+}) => {
+  await abrir(page);
+  const linhas = page.locator("#onb-conteudo li");
+  // centraliza a 4ª linha (Espeto simples) com o cartão do kit ativo
+  await rolarAte(page, "#onb-conteudo li:nth-child(4)");
+  await expect(page.locator("#onb-passo-kit")).toHaveClass(/\bativo\b/);
+  await expect(linhas.nth(3)).toHaveClass(/\bacesa\b/);
+  await expect(linhas.nth(0)).toHaveClass(/\besmaecida\b/);
+  await expect(page.locator("#onb-conteudo li.esmaecida")).toHaveCount(5);
+  // sai do passo: nada aceso, nada esmaecido
+  await rolarAte(page, "#onb-passo-acessorios");
+  await expect(page.locator("#onb-conteudo li.acesa, #onb-conteudo li.esmaecida")).toHaveCount(0);
+});
+
 test.describe("barra de preço do celular", () => {
   test.skip(({ isMobile }) => !isMobile, "só existe abaixo de 1024px");
   test("toque no preço abre o resumo; Comprar nunca coberto", async ({ page }) => {
